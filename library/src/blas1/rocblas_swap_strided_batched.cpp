@@ -29,11 +29,15 @@ namespace
     }
 
     template <typename>
-    constexpr char rocblas_swap_name[] = "unknown";
+    constexpr char rocblas_swap_strided_batched_name[] = "unknown";
     template <>
-    constexpr char rocblas_swap_name<float>[] = "rocblas_sswap_strided_batched";
+    constexpr char rocblas_swap_strided_batched_name<float>[] = "rocblas_sswap_strided_batched";
     template <>
-    constexpr char rocblas_swap_name<double>[] = "rocblas_dswap_strided_batched";
+    constexpr char rocblas_swap_strided_batched_name<double>[] = "rocblas_dswap_strided_batched";
+    template <>
+    constexpr char rocblas_swap_strided_batched_name<rocblas_float_complex>[] = "rocblas_cswap_strided_batched";
+    template <>
+    constexpr char rocblas_swap_strided_batched_name<rocblas_double_complex>[] = "rocblas_zswap_strided_batched";
 
     template <class T>
     rocblas_status rocblas_swap_strided_batched(
@@ -44,7 +48,7 @@ namespace
 
         auto layer_mode = handle->layer_mode;
         if(layer_mode & rocblas_layer_mode_log_trace)
-            log_trace(handle, rocblas_swap_name<T>, n, x, incx, stridex, y, incy, stridey, batch_count);
+            log_trace(handle, rocblas_swap_strided_batched_name<T>, n, x, incx, stridex, y, incy, stridey, batch_count);
         if(layer_mode & rocblas_layer_mode_log_bench)
             log_bench(handle,
                       "./rocblas-bench -f swap_strided_batched -r",
@@ -62,13 +66,15 @@ namespace
                       "--batch",
                       batch_count);
         if(layer_mode & rocblas_layer_mode_log_profile)
-            log_profile(handle, rocblas_swap_name<T>, "N", n, "incx", incx, "stride_x", stridex, 
+            log_profile(handle, rocblas_swap_strided_batched_name<T>, "N", n, "incx", incx, "stride_x", stridex, 
                 "incy", incy, "stride_y", stridey, "batch", batch_count);
 
         if(!x || !y)
             return rocblas_status_invalid_pointer;
 
-        if((stridex < n * incx) || (stridey < n * incy) || (batch_count <= 0))
+        size_t abs_incx = incx >= 0 ? incx : -incx;
+        size_t abs_incy = incy >= 0 ? incy : -incy;
+        if((stridex < n * abs_incx) || (stridey < n * abs_incy) || (batch_count <= 0))
             return rocblas_status_invalid_size;
 
         RETURN_ZERO_DEVICE_MEMORY_SIZE_IF_QUERIED(handle);
@@ -112,6 +118,24 @@ rocblas_status rocblas_sswap_strided_batched(
 
 rocblas_status rocblas_dswap_strided_batched(
     rocblas_handle handle, rocblas_int n, double* x, rocblas_int incx, rocblas_int stridex, double* y, rocblas_int incy, rocblas_int stridey, rocblas_int batch_count)
+{
+    return rocblas_swap_strided_batched(handle, n, x, incx, stridex, y, incy, stridey, batch_count);
+}
+
+rocblas_status rocblas_cswap_strided_batched(rocblas_handle handle,
+                             rocblas_int            n,
+                             rocblas_float_complex* x, rocblas_int incx, rocblas_int stridex,
+                             rocblas_float_complex* y, rocblas_int incy, rocblas_int stridey, 
+                             rocblas_int batch_count)
+{
+    return rocblas_swap_strided_batched(handle, n, x, incx, stridex, y, incy, stridey, batch_count);
+}
+
+rocblas_status rocblas_zswap_strided_batched(rocblas_handle handle,
+                             rocblas_int             n,
+                             rocblas_double_complex* x, rocblas_int incx, rocblas_int stridex,
+                             rocblas_double_complex* y, rocblas_int incy, rocblas_int stridey, 
+                             rocblas_int batch_count)
 {
     return rocblas_swap_strided_batched(handle, n, x, incx, stridex, y, incy, stridey, batch_count);
 }

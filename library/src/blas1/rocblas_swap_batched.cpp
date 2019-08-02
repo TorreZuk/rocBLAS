@@ -29,11 +29,11 @@ namespace
     }
 
     template <typename>
-    constexpr char rocblas_swap_name[] = "unknown";
+    constexpr char rocblas_swap_batched_name[] = "unknown";
     template <>
-    constexpr char rocblas_swap_name<float>[] = "rocblas_sswap_batched";
+    constexpr char rocblas_swap_batched_name<float>[] = "rocblas_sswap_batched";
     template <>
-    constexpr char rocblas_swap_name<double>[] = "rocblas_dswap_batched";
+    constexpr char rocblas_swap_batched_name<double>[] = "rocblas_dswap_batched";
 
     template <class T>
     rocblas_status rocblas_swap_batched(
@@ -44,7 +44,7 @@ namespace
 
         auto layer_mode = handle->layer_mode;
         if(layer_mode & rocblas_layer_mode_log_trace)
-            log_trace(handle, rocblas_swap_name<T>, n, x, incx, y, incy);
+            log_trace(handle, rocblas_swap_batched_name<T>, n, x, incx, y, incy, batch_count);
         if(layer_mode & rocblas_layer_mode_log_bench)
             log_bench(handle,
                       "./rocblas-bench -f swap_batched -r",
@@ -58,7 +58,7 @@ namespace
                       "--batch",
                       batch_count);
         if(layer_mode & rocblas_layer_mode_log_profile)
-            log_profile(handle, rocblas_swap_name<T>, "N", n, "incx", incx, "incy", incy, "batch", batch_count);
+            log_profile(handle, rocblas_swap_batched_name<T>, "N", n, "incx", incx, "incy", incy, "batch", batch_count);
 
         if(!x || !y)
             return rocblas_status_invalid_pointer;
