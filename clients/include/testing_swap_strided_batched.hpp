@@ -56,8 +56,27 @@ void testing_swap_strided_batched(const Arguments& arg)
 
     rocblas_local_handle handle;
 
+    size_t abs_incx = incx >= 0 ? incx : -incx;
+    size_t abs_incy = incy >= 0 ? incy : -incy;
+
     // argument sanity check before allocating invalid memory
-    if(N <= 0)
+    if(stridex < N*abs_incx || stridey < N*abs_incy || batch_count <= 0)
+    {
+        static const size_t safe_size = 100; //  arbitrarily set to 100
+        device_vector<T>    dx(safe_size);
+        device_vector<T>    dy(safe_size);
+        if(!dx || !dy)
+        {
+            CHECK_HIP_ERROR(hipErrorOutOfMemory);
+            return;
+        }
+
+        EXPECT_ROCBLAS_STATUS(rocblas_swap_strided_batched<T>(handle, N, dx, incx, stridex, dy, incy, stridey, batch_count),
+                              rocblas_status_invalid_size);
+        return;
+    }
+
+    if(N <= 0 )
     {
         static const size_t safe_size = 100; //  arbitrarily set to 100
         device_vector<T>    dx(safe_size);
@@ -72,10 +91,18 @@ void testing_swap_strided_batched(const Arguments& arg)
         return;
     }
 
-    size_t abs_incx = incx >= 0 ? incx : -incx;
-    size_t abs_incy = incy >= 0 ? incy : -incy;
-    size_t size_x   = N * abs_incx;
-    size_t size_y   = N * abs_incy;
+    // tests forced to correct stride for now
+
+    size_t size_x   = std::max(N * abs_incx, (size_t)stridex);
+    size_t size_y   = std::max(N * abs_incy, (size_t)stridey);
+    if (stridex < size_x)
+    {
+        stridex = size_x;
+    }
+    if (stridey < size_y)
+    {
+        stridey = size_y;
+    }
 
     // Naming: dX is in GPU (device) memory. hK is in CPU (host) memory, plz follow this practice
     host_vector<T> hx(size_x*batch_count, 1);
@@ -109,7 +136,7 @@ void testing_swap_strided_batched(const Arguments& arg)
     size_t dataSizeX = sizeof(T) * size_x * batch_count;
     size_t dataSizeY = sizeof(T) * size_y * batch_count;
 
-    // copy data from CPU to device
+    // copy vector data from CPU to device
     CHECK_HIP_ERROR(hipMemcpy(dx, hx, dataSizeX, hipMemcpyHostToDevice));
     CHECK_HIP_ERROR(hipMemcpy(dy, hy, dataSizeY, hipMemcpyHostToDevice));
 
@@ -132,14 +159,26 @@ void testing_swap_strided_batched(const Arguments& arg)
 
         if(arg.unit_check)
         {
-            unit_check_general<T>(1, N*batch_count, abs_incx, hx_gold, hx);
-            unit_check_general<T>(1, N*batch_count, abs_incy, hy_gold, hy);
+            for(int i = 0; i < batch_count; i++)
+            {
+                unit_check_general<T>(1, N, abs_incx, hx_gold+i*stridex, hx+i*stridex);
+                unit_check_general<T>(1, N, abs_incy, hy_gold+i*stridey, hy+i*stridey);
+            }
+
+            //unit_check_general<T>(1, N*batch_count, abs_incx, hx_gold, hx);
+            //unit_check_general<T>(1, N*batch_count, abs_incy, hy_gold, hy);
         }
 
         if(arg.norm_check)
         {
-            rocblas_error = norm_check_general<T>('F', 1, N*batch_count, abs_incx, hx_gold, hx);
-            rocblas_error = norm_check_general<T>('F', 1, N*batch_count, abs_incy, hy_gold, hy);
+            for(int i = 0; i < batch_count; i++)
+            {
+                rocblas_error = norm_check_general<T>('F', 1, N, abs_incx, hx_gold+i*stridex, hx+i*stridex);
+                rocblas_error = norm_check_general<T>('F', 1, N, abs_incy, hy_gold+i*stridey, hy+i*stridey);
+
+            }
+            //rocblas_error = norm_check_general<T>('F', 1, N*batch_count, abs_incx, hx_gold, hx);
+            //rocblas_error = norm_check_general<T>('F', 1, N*batch_count, abs_incy, hy_gold, hy);
         }
     }
 
@@ -163,7 +202,7 @@ void testing_swap_strided_batched(const Arguments& arg)
 
         gpu_time_used = (get_time_us() - gpu_time_used) / number_hot_calls;
 
-        std::cout << "N,incx,incy,batch_count,rocblas-us" << std::endl;
-        std::cout << N << "," << incx << "," << incy << "," << batch_count << ","<< gpu_time_used << std::endl;
+        std::cout << "N,incx,incy,stride_x,stride_y,batch_count,rocblas-us" << std::endl;
+        std::cout << N << "," << incx << "," << incy << "," << stridex << "," << stridey << "," << batch_count << ","<< gpu_time_used << std::endl;
     }
 }

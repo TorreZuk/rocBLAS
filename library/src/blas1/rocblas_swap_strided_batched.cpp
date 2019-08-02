@@ -19,6 +19,8 @@ namespace
         {
             T* xb = x + blockIdx.y*stridex;
             T* yb = y + blockIdx.y*stridey;
+            xb -= (incx < 0) ? incx*(n-1) : 0;
+            yb -= (incy < 0) ? incy*(n-1) : 0;
 
             auto tmp      = yb[tid * incy];
             yb[tid * incy] = xb[tid * incx];
@@ -66,6 +68,9 @@ namespace
         if(!x || !y)
             return rocblas_status_invalid_pointer;
 
+        if((stridex < n * incx) || (stridey < n * incy) || (batch_count <= 0))
+            return rocblas_status_invalid_size;
+
         RETURN_ZERO_DEVICE_MEMORY_SIZE_IF_QUERIED(handle);
 
         // Quick return if possible.
@@ -77,10 +82,10 @@ namespace
         dim3        grid(blocks, batch_count);
         dim3        threads(NB);
 
-        if(incx < 0)
-            x -= ptrdiff_t(incx) * (n - 1); // + offset to end
-        if(incy < 0)
-            y -= ptrdiff_t(incy) * (n - 1);
+        // if(incx < 0)
+        //     x -= ptrdiff_t(incx) * (n - 1); // + offset to end
+        // if(incy < 0)
+        //     y -= ptrdiff_t(incy) * (n - 1);
 
         hipLaunchKernelGGL(swap_kernel_strided_batched, grid, threads, 0, rocblas_stream, n, x, incx, stridex, y, incy, stridey);
 
