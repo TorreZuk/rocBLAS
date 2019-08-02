@@ -19,11 +19,9 @@ namespace
         {
             T* xb = x[blockIdx.y];
             T* yb = y[blockIdx.y];
-            if (incx < 0)
-              xb -= incx*(n-1);
-            if (incy < 0)
-              yb -= incy*(n-1);
-              
+            xb -= (incx < 0) ? incx*(n-1) : 0;
+            yb -= (incy < 0) ? incy*(n-1) : 0;
+
             auto tmp      = yb[tid * incy];
             yb[tid * incy] = xb[tid * incx];
             xb[tid * incx] = tmp;
@@ -60,16 +58,20 @@ namespace
                       "--batch",
                       batch_count);
         if(layer_mode & rocblas_layer_mode_log_profile)
-            log_profile(handle, rocblas_swap_name<T>, "N", n, "incx", incx, "incy", incy);
+            log_profile(handle, rocblas_swap_name<T>, "N", n, "incx", incx, "incy", incy, "batch", batch_count);
 
         if(!x || !y)
             return rocblas_status_invalid_pointer;
+
+        if(batch_count <= 0)
+            return rocblas_status_invalid_size;
 
         RETURN_ZERO_DEVICE_MEMORY_SIZE_IF_QUERIED(handle);
 
         // Quick return if possible.
         if(n <= 0)
             return rocblas_status_success;
+
 
         hipStream_t rocblas_stream = handle->rocblas_stream;
         int         blocks         = (n - 1) / NB + 1;

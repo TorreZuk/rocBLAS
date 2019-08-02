@@ -63,25 +63,23 @@ Tests:
 #    - swap_batched:  *single_double_precisions
 #    - swap_strided_batched:  *single_double_precisions
 
-- name: blas1_batched
+- name: blas1_swap_batched
   category: quick
   N: [ -1, 0, 5, 10, 1025, 7111, 10000, 33792 ]
   incx_incy: *incx_incy_range
-  alpha_beta: *alpha_beta_range
-  alphai_betai: *alphai_betai_range
   batch_count: [1, 10]
-  function:
+  function: 
     - swap_batched: *single_double_precisions
 
-- name: blas1_strided_batched
+- name: blas1_swap_strided_batched
   category: quick
-  N: [ -1, 0, 5, 10, 1025, 7111, 10000, 33792 ]
-  incx_incy: *incx_incy_range
-  alpha_beta: *alpha_beta_range
-  alphai_betai: *alphai_betai_range
+  N: [ -1, 0, 5, 10, 1025, 7111, 10000, 33792 ] 
+  incx_incy: *incx_incy_range 
+# incx: [1, 2]
+# incy: [1, 2]
   batch_count: [1, 10]
-  stride_x: [1, 1000, 100000]
-  stride_y: [1, 1000, 100000]
+  stride_x: [1, 68000]
+  stride_y: [1, 68000]
   function:
     - swap_strided_batched: *single_double_precisions
 
