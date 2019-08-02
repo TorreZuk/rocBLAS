@@ -75,13 +75,11 @@ Tests:
   category: quick
   N: [ -1, 0, 5, 10, 1025, 7111, 10000, 33792 ] 
   incx_incy: *incx_incy_range 
-# incx: [1, 2]
-# incy: [1, 2]
   batch_count: [1, 10]
   stride_x: [1, 68000]
   stride_y: [1, 68000]
   function:
-    - swap_strided_batched: *single_double_precisions
+    - swap_strided_batched: *single_double_precisions_complex_real
 
 - name: blas1_bad_arg
   category: pre_checkin
