@@ -39,8 +39,8 @@ Tests:
     - scal:  *single_double_precisions_complex_real
     - scal:  *single_double_complex_real_in_complex_out
     - swap:  *single_double_precisions_complex_real
-    - swap_batched:  *single_double_precisions
-    - swap_strided_batched:  *single_double_precisions
+#    - swap_batched:  *single_double_precisions
+#    - swap_strided_batched:  *single_double_precisions
 
 - name: blas1
   category: pre_checkin
@@ -64,12 +64,30 @@ Tests:
 #    - swap_strided_batched:  *single_double_precisions
 
 - name: blas1_swap_batched
+  category: pre_checkin
+  N: [ 1048576, 1049600, 4000000, 8000000 ]
+  incx_incy: *incx_incy_range
+  batch_count: [1, 10]
+  function: 
+    - swap_batched: *single_double_precisions_complex_real
+
+- name: blas1_swap_strided_batched
+  category: pre_checkin
+  N: [ 1048576, 1049600, 4000000, 8000000 ]
+  incx_incy: *incx_incy_range
+  batch_count: [1, 10]
+  stride_x: [1, 16000000]
+  stride_y: [1, 16000000]
+  function:
+    - swap_strided_batched: *single_double_precisions_complex_real
+
+- name: blas1_swap_batched
   category: quick
   N: [ -1, 0, 5, 10, 1025, 7111, 10000, 33792 ]
   incx_incy: *incx_incy_range
   batch_count: [1, 10]
   function: 
-    - swap_batched: *single_double_precisions
+    - swap_batched: *single_double_precisions_complex_real
 
 - name: blas1_swap_strided_batched
   category: quick
@@ -95,6 +113,6 @@ Tests:
     - scal_bad_arg:  *single_double_precisions_complex_real
     - scal_bad_arg:  *single_double_complex_real_in_complex_out
     - swap_bad_arg:  *single_double_precisions_complex_real
-    - swap_batched_bad_arg:  *single_double_precisions
-    - swap_strided_batched_bad_arg:  *single_double_precisions
+    - swap_batched_bad_arg:  *single_double_precisions_complex_real
+    - swap_strided_batched_bad_arg:  *single_double_precisions_complex_real
 ...

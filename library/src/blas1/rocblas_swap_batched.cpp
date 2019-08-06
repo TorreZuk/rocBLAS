@@ -34,6 +34,10 @@ namespace
     constexpr char rocblas_swap_batched_name<float>[] = "rocblas_sswap_batched";
     template <>
     constexpr char rocblas_swap_batched_name<double>[] = "rocblas_dswap_batched";
+    template <>
+    constexpr char rocblas_swap_batched_name<rocblas_float_complex>[] = "rocblas_cswap_batched";
+    template <>
+    constexpr char rocblas_swap_batched_name<rocblas_double_complex>[] = "rocblas_zswap_batched";
 
     template <class T>
     rocblas_status rocblas_swap_batched(
@@ -108,6 +112,18 @@ rocblas_status rocblas_sswap_batched(
 
 rocblas_status rocblas_dswap_batched(
     rocblas_handle handle, rocblas_int n, double* x[], rocblas_int incx, double* y[], rocblas_int incy, rocblas_int batch_count)
+{
+    return rocblas_swap_batched(handle, n, x, incx, y, incy, batch_count);
+}
+
+rocblas_status rocblas_cswap_batched(
+    rocblas_handle handle, rocblas_int n, rocblas_float_complex* x[], rocblas_int incx, rocblas_float_complex* y[], rocblas_int incy, rocblas_int batch_count)
+{
+    return rocblas_swap_batched(handle, n, x, incx, y, incy, batch_count);
+}
+
+rocblas_status rocblas_zswap_batched(
+    rocblas_handle handle, rocblas_int n, rocblas_double_complex* x[], rocblas_int incx, rocblas_double_complex* y[], rocblas_int incy, rocblas_int batch_count)
 {
     return rocblas_swap_batched(handle, n, x, incx, y, incy, batch_count);
 }
