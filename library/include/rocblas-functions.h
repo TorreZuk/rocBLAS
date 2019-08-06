@@ -334,6 +334,12 @@ ROCBLAS_EXPORT rocblas_status rocblas_sswap_batched(
 ROCBLAS_EXPORT rocblas_status rocblas_dswap_batched(
     rocblas_handle handle, rocblas_int n, double* x[], rocblas_int incx, double* y[], rocblas_int incy, rocblas_int batch_count);
 
+ROCBLAS_EXPORT rocblas_status rocblas_cswap_batched(
+    rocblas_handle handle, rocblas_int n, rocblas_float_complex* x[], rocblas_int incx, rocblas_float_complex* y[], rocblas_int incy, rocblas_int batch_count);
+
+ROCBLAS_EXPORT rocblas_status rocblas_zswap_batched(
+    rocblas_handle handle, rocblas_int n, rocblas_double_complex* x[], rocblas_int incx, rocblas_double_complex* y[], rocblas_int incy, rocblas_int batch_count);
+
 /*! \brief BLAS Level 1 API
 
     \details
