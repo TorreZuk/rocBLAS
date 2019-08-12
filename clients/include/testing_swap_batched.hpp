@@ -120,19 +120,25 @@ void testing_swap_batched(const Arguments& arg)
     }
 
     // Initial Data on CPU
-    //rocblas_seedrand();
-    //rocblas_init<T>(hx, 1, N, abs_incx);
-    // make hy different to hx
-    // for(size_t i = 0; i < N; i++)
-    // {
-    //     hy[i * abs_incy] = hx[i * abs_incx] + 1.0;
-    // };
+    rocblas_seedrand();
+    for(int i = 0; i < batch_count; i++)
+    {
+        rocblas_init<T>(hx[i], 1, N, abs_incx);
+        // make hy different to hx
+        for(size_t j = 0; j < N; j++)
+        {
+            hy[i][j * abs_incy] = hx[i][j * abs_incx] + 1.0;
+        };        
+        hx_gold[i] = hx[i]; // swapped later by cblas_swap
+        hy_gold[i] = hy[i];   
+    }
 
     // swap vector is easy in STL; hy_gold = hx: save a swap in hy_gold which will be output of CPU
     // BLAS
-    //hx_gold = hx;
-    //hy_gold = hy;
 
+    device_batch_vector<T> dxvec(batch_count, size_x);
+    device_batch_vector<T> dyvec(batch_count, size_y);
+    /*
     T** hdx = new T*[batch_count]; // must create device ptr array on host
     T** hdy = new T*[batch_count]; // gpu pointers on cpu
     for(int i = 0; i < batch_count; i++)
@@ -140,15 +146,17 @@ void testing_swap_batched(const Arguments& arg)
         hipMalloc(&hdx[i], size_x * sizeof(T));
         hipMalloc(&hdy[i], size_y * sizeof(T));
     }
+    */
 
     // copy data from host to device
     for(int i = 0; i < batch_count; i++)
     {
-        CHECK_HIP_ERROR(hipMemcpy(hdx[i], hx[i], sizeof(T) * size_x, hipMemcpyHostToDevice));
-        CHECK_HIP_ERROR(hipMemcpy(hdy[i], hy[i], sizeof(T) * size_y, hipMemcpyHostToDevice));
+        CHECK_HIP_ERROR(hipMemcpy(dxvec[i], hx[i], sizeof(T) * size_x, hipMemcpyHostToDevice));
+        CHECK_HIP_ERROR(hipMemcpy(dyvec[i], hy[i], sizeof(T) * size_y, hipMemcpyHostToDevice));
     }
 
     // vector pointers on gpu
+    
     T** dx_pvec;
     T** dy_pvec;
     CHECK_HIP_ERROR(hipMalloc(&dx_pvec, batch_count * sizeof(T*)));
@@ -158,10 +166,11 @@ void testing_swap_batched(const Arguments& arg)
         CHECK_HIP_ERROR(hipErrorOutOfMemory);
         return;
     }
+    
 
     // copy gpu vector pointers from host to device pointer array
-    CHECK_HIP_ERROR(hipMemcpy(dx_pvec, &hdx[0], sizeof(T*) * batch_count, hipMemcpyHostToDevice));
-    CHECK_HIP_ERROR(hipMemcpy(dy_pvec, &hdy[0], sizeof(T*) * batch_count, hipMemcpyHostToDevice));
+    CHECK_HIP_ERROR(hipMemcpy(dx_pvec, dxvec, sizeof(T*) * batch_count, hipMemcpyHostToDevice));
+    CHECK_HIP_ERROR(hipMemcpy(dy_pvec, dyvec, sizeof(T*) * batch_count, hipMemcpyHostToDevice));
 
     double gpu_time_used, cpu_time_used;
     double rocblas_error = 0.0;
@@ -175,13 +184,16 @@ void testing_swap_batched(const Arguments& arg)
         // copy data from device to CPU
         for(int i = 0; i < batch_count; i++)
         {
-            CHECK_HIP_ERROR(hipMemcpy(hx[i], hdx[i], sizeof(T) * size_x, hipMemcpyDeviceToHost));
-            CHECK_HIP_ERROR(hipMemcpy(hy[i], hdy[i], sizeof(T) * size_y, hipMemcpyDeviceToHost));
+            CHECK_HIP_ERROR(hipMemcpy(hx[i], dxvec[i], sizeof(T) * size_x, hipMemcpyDeviceToHost));
+            CHECK_HIP_ERROR(hipMemcpy(hy[i], dyvec[i], sizeof(T) * size_y, hipMemcpyDeviceToHost));
         }
 
         // CPU BLAS
         cpu_time_used = get_time_us();
-        //cblas_swap_batched<T>(N, hx_gold, incx, hy_gold, incy);
+        for(int i = 0; i < batch_count; i++)
+        {
+            cblas_swap<T>(N, hx_gold[i], incx, hy_gold[i], incy);
+        }
         cpu_time_used = get_time_us() - cpu_time_used;
 
         if(arg.unit_check)
@@ -228,13 +240,13 @@ void testing_swap_batched(const Arguments& arg)
                   << std::endl;
     }
 
-    for(int i = 0; i < batch_count; i++)
-    {
-        CHECK_HIP_ERROR(hipFree(hdx[i]));
-        CHECK_HIP_ERROR(hipFree(hdy[i])); // gpu pointers on cpu
-    }
-    delete[] hdx;
-    delete[] hdy;
+    // for(int i = 0; i < batch_count; i++)
+    // {
+    //     CHECK_HIP_ERROR(hipFree(hdx[i]));
+    //     CHECK_HIP_ERROR(hipFree(hdy[i])); // gpu pointers on cpu
+    // }
+    // delete[] hdx;
+    // delete[] hdy;
     CHECK_HIP_ERROR(hipFree(dx_pvec));
     CHECK_HIP_ERROR(hipFree(dy_pvec));
 }
