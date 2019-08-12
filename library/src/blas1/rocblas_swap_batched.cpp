@@ -11,7 +11,8 @@ namespace
     constexpr int NB = 256;
 
     template <typename T>
-    __global__ void swap_kernel_batched(rocblas_int n, T* x[], rocblas_int incx, T* y[], rocblas_int incy)
+    __global__ void
+        swap_kernel_batched(rocblas_int n, T* x[], rocblas_int incx, T* y[], rocblas_int incy)
     {
         ssize_t tid = blockIdx.x * blockDim.x + threadIdx.x; // only dim1
 
@@ -19,10 +20,11 @@ namespace
         {
             T* xb = x[blockIdx.y];
             T* yb = y[blockIdx.y];
-            xb -= (incx < 0) ? incx*(n-1) : 0;
-            yb -= (incy < 0) ? incy*(n-1) : 0;
+            // in case of negative inc shift pointer to end of data for negative indexing tid*inc
+            xb -= (incx < 0) ? ptrdiff_t(incx) * (n - 1) : 0;
+            yb -= (incy < 0) ? ptrdiff_t(incy) * (n - 1) : 0;
 
-            auto tmp      = yb[tid * incy];
+            auto tmp       = yb[tid * incy];
             yb[tid * incy] = xb[tid * incx];
             xb[tid * incx] = tmp;
         }
@@ -40,8 +42,13 @@ namespace
     constexpr char rocblas_swap_batched_name<rocblas_double_complex>[] = "rocblas_zswap_batched";
 
     template <class T>
-    rocblas_status rocblas_swap_batched(
-        rocblas_handle handle, rocblas_int n, T* x[], rocblas_int incx, T* y[], rocblas_int incy, rocblas_int batch_count)
+    rocblas_status rocblas_swap_batched(rocblas_handle handle,
+                                        rocblas_int    n,
+                                        T*             x[],
+                                        rocblas_int    incx,
+                                        T*             y[],
+                                        rocblas_int    incy,
+                                        rocblas_int    batch_count)
     {
         if(!handle)
             return rocblas_status_invalid_handle;
@@ -62,7 +69,16 @@ namespace
                       "--batch",
                       batch_count);
         if(layer_mode & rocblas_layer_mode_log_profile)
-            log_profile(handle, rocblas_swap_batched_name<T>, "N", n, "incx", incx, "incy", incy, "batch", batch_count);
+            log_profile(handle,
+                        rocblas_swap_batched_name<T>,
+                        "N",
+                        n,
+                        "incx",
+                        incx,
+                        "incy",
+                        incy,
+                        "batch",
+                        batch_count);
 
         if(!x || !y)
             return rocblas_status_invalid_pointer;
@@ -76,18 +92,13 @@ namespace
         if(n <= 0)
             return rocblas_status_success;
 
-
         hipStream_t rocblas_stream = handle->rocblas_stream;
         int         blocks         = (n - 1) / NB + 1;
         dim3        grid(blocks, batch_count);
         dim3        threads(NB);
 
-        // if(incx < 0)
-        //     x -= ptrdiff_t(incx) * (n - 1);
-        // if(incy < 0)
-        //     y -= ptrdiff_t(incy) * (n - 1);
-
-        hipLaunchKernelGGL(swap_kernel_batched, grid, threads, 0, rocblas_stream, n, x, incx, y, incy);
+        hipLaunchKernelGGL(
+            swap_kernel_batched, grid, threads, 0, rocblas_stream, n, x, incx, y, incy);
 
         return rocblas_status_success;
     }
@@ -104,26 +115,46 @@ namespace
 
 extern "C" {
 
-rocblas_status rocblas_sswap_batched(
-    rocblas_handle handle, rocblas_int n, float* x[], rocblas_int incx, float* y[], rocblas_int incy, rocblas_int batch_count)
+rocblas_status rocblas_sswap_batched(rocblas_handle handle,
+                                     rocblas_int    n,
+                                     float*         x[],
+                                     rocblas_int    incx,
+                                     float*         y[],
+                                     rocblas_int    incy,
+                                     rocblas_int    batch_count)
 {
     return rocblas_swap_batched(handle, n, x, incx, y, incy, batch_count);
 }
 
-rocblas_status rocblas_dswap_batched(
-    rocblas_handle handle, rocblas_int n, double* x[], rocblas_int incx, double* y[], rocblas_int incy, rocblas_int batch_count)
+rocblas_status rocblas_dswap_batched(rocblas_handle handle,
+                                     rocblas_int    n,
+                                     double*        x[],
+                                     rocblas_int    incx,
+                                     double*        y[],
+                                     rocblas_int    incy,
+                                     rocblas_int    batch_count)
 {
     return rocblas_swap_batched(handle, n, x, incx, y, incy, batch_count);
 }
 
-rocblas_status rocblas_cswap_batched(
-    rocblas_handle handle, rocblas_int n, rocblas_float_complex* x[], rocblas_int incx, rocblas_float_complex* y[], rocblas_int incy, rocblas_int batch_count)
+rocblas_status rocblas_cswap_batched(rocblas_handle         handle,
+                                     rocblas_int            n,
+                                     rocblas_float_complex* x[],
+                                     rocblas_int            incx,
+                                     rocblas_float_complex* y[],
+                                     rocblas_int            incy,
+                                     rocblas_int            batch_count)
 {
     return rocblas_swap_batched(handle, n, x, incx, y, incy, batch_count);
 }
 
-rocblas_status rocblas_zswap_batched(
-    rocblas_handle handle, rocblas_int n, rocblas_double_complex* x[], rocblas_int incx, rocblas_double_complex* y[], rocblas_int incy, rocblas_int batch_count)
+rocblas_status rocblas_zswap_batched(rocblas_handle          handle,
+                                     rocblas_int             n,
+                                     rocblas_double_complex* x[],
+                                     rocblas_int             incx,
+                                     rocblas_double_complex* y[],
+                                     rocblas_int             incy,
+                                     rocblas_int             batch_count)
 {
     return rocblas_swap_batched(handle, n, x, incx, y, incy, batch_count);
 }

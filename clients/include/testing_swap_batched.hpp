@@ -17,16 +17,16 @@
 template <typename T>
 void testing_swap_batched_bad_arg(const Arguments& arg)
 {
-    rocblas_int         N         = 100;
-    rocblas_int         incx      = 1;
-    rocblas_int         incy      = 1;
-    rocblas_int         batch_count = 1;
+    rocblas_int N           = 100;
+    rocblas_int incx        = 1;
+    rocblas_int incy        = 1;
+    rocblas_int batch_count = 1;
 
     rocblas_local_handle handle;
 
-    T**                 dxt;
+    T** dxt;
     hipMalloc(&dxt, sizeof(T*));
-    T**                 dyt;
+    T** dyt;
     hipMalloc(&dyt, sizeof(T*));
     if(!dxt || !dyt)
     {
@@ -48,10 +48,10 @@ void testing_swap_batched_bad_arg(const Arguments& arg)
 template <typename T>
 void testing_swap_batched(const Arguments& arg)
 {
-    rocblas_int          N    = arg.N;
-    rocblas_int          incx = arg.incx;
-    rocblas_int          incy = arg.incy;
-    rocblas_int          batch_count = arg.batch_count;
+    rocblas_int N           = arg.N;
+    rocblas_int incx        = arg.incx;
+    rocblas_int incy        = arg.incy;
+    rocblas_int batch_count = arg.batch_count;
 
     rocblas_local_handle handle;
 
@@ -60,9 +60,9 @@ void testing_swap_batched(const Arguments& arg)
     {
         static const size_t safe_size = 100; //  arbitrarily set to 100
 
-        T**                 dxt;
+        T** dxt;
         hipMalloc(&dxt, sizeof(T*));
-        T**                 dyt;
+        T** dyt;
         hipMalloc(&dyt, sizeof(T*));
         if(!dxt || !dyt)
         {
@@ -81,10 +81,10 @@ void testing_swap_batched(const Arguments& arg)
     if(N <= 0)
     {
         static const size_t safe_size = 100; //  arbitrarily set to 100
-        
-        T**                 dxt;
+
+        T** dxt;
         hipMalloc(&dxt, sizeof(T*));
-        T**                 dyt;
+        T** dyt;
         hipMalloc(&dyt, sizeof(T*));
         if(!dxt || !dyt)
         {
@@ -102,21 +102,21 @@ void testing_swap_batched(const Arguments& arg)
     ssize_t abs_incx = (incx >= 0) ? incx : -incx;
     ssize_t abs_incy = (incy >= 0) ? incy : -incy;
 
-    size_t size_x   = N * abs_incx;
-    size_t size_y   = N * abs_incy;
+    size_t size_x = N * abs_incx;
+    size_t size_y = N * abs_incy;
 
-    // Naming: dx_pvec is in GPU (device) memory. hK is in CPU (host) memory, plz follow this practice
-    host_vector<T> hx[batch_count]; // (batch_count*size_x, 1);
-    host_vector<T> hy[batch_count]; //(batch_count*size_y, 0);
-    host_vector<T> hx_gold[batch_count];//(batch_count*size_x, 0);
-    host_vector<T> hy_gold[batch_count];//(batch_count*size_y, 1);// swapped
+    // Naming: dK is in GPU (device) memory. hK is in CPU (host) memory, plz follow this practice
+    host_vector<T> hx[batch_count]; 
+    host_vector<T> hy[batch_count]; 
+    host_vector<T> hx_gold[batch_count]; 
+    host_vector<T> hy_gold[batch_count]; 
 
     for(int i = 0; i < batch_count; i++)
     {
-        hx[i]    = host_vector<T>(size_x, 0);
-        hy[i]    = host_vector<T>(size_y, 1);
-        hx_gold[i]    = host_vector<T>(size_x, 1);
-        hy_gold[i]    = host_vector<T>(size_y, 0); // gold swapped
+        hx[i]      = host_vector<T>(size_x, 0);
+        hy[i]      = host_vector<T>(size_y, 1);
+        hx_gold[i] = host_vector<T>(size_x, 1);
+        hy_gold[i] = host_vector<T>(size_y, 0); // gold swapped 1 and 0
     }
 
     // Initial Data on CPU
@@ -133,13 +133,12 @@ void testing_swap_batched(const Arguments& arg)
     //hx_gold = hx;
     //hy_gold = hy;
 
-
     T** hdx = new T*[batch_count]; // must create device ptr array on host
     T** hdy = new T*[batch_count]; // gpu pointers on cpu
     for(int i = 0; i < batch_count; i++)
     {
-        hipMalloc(&hdx[i], size_x*sizeof(T));
-        hipMalloc(&hdy[i], size_y*sizeof(T)); 
+        hipMalloc(&hdx[i], size_x * sizeof(T));
+        hipMalloc(&hdy[i], size_y * sizeof(T));
     }
 
     // copy data from host to device
@@ -151,7 +150,7 @@ void testing_swap_batched(const Arguments& arg)
 
     // vector pointers on gpu
     T** dx_pvec;
-    T** dy_pvec;    
+    T** dy_pvec;
     CHECK_HIP_ERROR(hipMalloc(&dx_pvec, batch_count * sizeof(T*)));
     CHECK_HIP_ERROR(hipMalloc(&dy_pvec, batch_count * sizeof(T*)));
     if(!dx_pvec || !dy_pvec)
@@ -164,18 +163,16 @@ void testing_swap_batched(const Arguments& arg)
     CHECK_HIP_ERROR(hipMemcpy(dx_pvec, &hdx[0], sizeof(T*) * batch_count, hipMemcpyHostToDevice));
     CHECK_HIP_ERROR(hipMemcpy(dy_pvec, &hdy[0], sizeof(T*) * batch_count, hipMemcpyHostToDevice));
 
-
     double gpu_time_used, cpu_time_used;
     double rocblas_error = 0.0;
 
     if(arg.unit_check || arg.norm_check)
     {
         // GPU BLAS
-        // CHECK_HIP_ERROR(hipMemcpy(dx_pvec, hx, sizeof(T) * size_x, hipMemcpyHostToDevice));
-        // CHECK_HIP_ERROR(hipMemcpy(dy_pvec, hy, sizeof(T) * size_y, hipMemcpyHostToDevice));
-        CHECK_ROCBLAS_ERROR(rocblas_swap_batched<T>(handle, N, dx_pvec, incx, dy_pvec, incy, batch_count));
+        CHECK_ROCBLAS_ERROR(
+            rocblas_swap_batched<T>(handle, N, dx_pvec, incx, dy_pvec, incy, batch_count));
 
-        // copy data from device to CPU 
+        // copy data from device to CPU
         for(int i = 0; i < batch_count; i++)
         {
             CHECK_HIP_ERROR(hipMemcpy(hx[i], hdx[i], sizeof(T) * size_x, hipMemcpyDeviceToHost));
@@ -209,7 +206,7 @@ void testing_swap_batched(const Arguments& arg)
     if(arg.timing)
     {
         int number_cold_calls = 2;
-        int number_hot_calls  = 100; 
+        int number_hot_calls  = 100;
         CHECK_ROCBLAS_ERROR(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host));
 
         for(int iter = 0; iter < number_cold_calls; iter++)
@@ -227,7 +224,8 @@ void testing_swap_batched(const Arguments& arg)
         gpu_time_used = (get_time_us() - gpu_time_used) / number_hot_calls;
 
         std::cout << "N,incx,incy,batch_count,rocblas-us" << std::endl;
-        std::cout << N << "," << incx << "," << incy << "," << batch_count << "," << gpu_time_used << std::endl;
+        std::cout << N << "," << incx << "," << incy << "," << batch_count << "," << gpu_time_used
+                  << std::endl;
     }
 
     for(int i = 0; i < batch_count; i++)
@@ -235,8 +233,8 @@ void testing_swap_batched(const Arguments& arg)
         CHECK_HIP_ERROR(hipFree(hdx[i]));
         CHECK_HIP_ERROR(hipFree(hdy[i])); // gpu pointers on cpu
     }
-    delete [] hdx;
-    delete [] hdy;
+    delete[] hdx;
+    delete[] hdy;
     CHECK_HIP_ERROR(hipFree(dx_pvec));
     CHECK_HIP_ERROR(hipFree(dy_pvec));
 }
