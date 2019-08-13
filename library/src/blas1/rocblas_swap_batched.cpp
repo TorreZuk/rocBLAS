@@ -83,13 +83,13 @@ namespace
         if(!x || !y)
             return rocblas_status_invalid_pointer;
 
-        if(batch_count <= 0)
+        if(batch_count < 0)
             return rocblas_status_invalid_size;
 
         RETURN_ZERO_DEVICE_MEMORY_SIZE_IF_QUERIED(handle);
 
         // Quick return if possible.
-        if(n <= 0)
+        if(n <= 0 || batch_count == 0)
             return rocblas_status_success;
 
         hipStream_t rocblas_stream = handle->rocblas_stream;

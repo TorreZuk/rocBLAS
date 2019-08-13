@@ -64,7 +64,7 @@ void testing_swap_strided_batched(const Arguments& arg)
 
     // argument sanity check before allocating invalid memory
     if(stridex < N * abs_incx || stridey < N * abs_incy ||
-       stridex < 0 || stridey < 0 || batch_count <= 0)
+       stridex < 0 || stridey < 0 || batch_count < 0)
     {
         static const size_t safe_size = 100; //  arbitrarily set to 100
         device_vector<T>    dx(safe_size);
@@ -81,7 +81,7 @@ void testing_swap_strided_batched(const Arguments& arg)
         return;
     }
 
-    if(N <= 0)
+    if(N <= 0 || batch_count == 0)
     {
         static const size_t safe_size = 100; //  arbitrarily set to 100
         device_vector<T>    dx(safe_size);

@@ -56,7 +56,7 @@ void testing_swap_batched(const Arguments& arg)
     rocblas_local_handle handle;
 
     // argument sanity check before allocating invalid memory
-    if(batch_count <= 0)
+    if(batch_count < 0)
     {
         static const size_t safe_size = 100; //  arbitrarily set to 100
 
@@ -78,7 +78,7 @@ void testing_swap_batched(const Arguments& arg)
         return;
     }
 
-    if(N <= 0)
+    if(N <= 0 || batch_count == 0)
     {
         static const size_t safe_size = 100; //  arbitrarily set to 100
 
@@ -113,10 +113,10 @@ void testing_swap_batched(const Arguments& arg)
 
     for(int i = 0; i < batch_count; i++)
     {
-        hx[i]      = host_vector<T>(size_x, 0);
-        hy[i]      = host_vector<T>(size_y, 1);
-        hx_gold[i] = host_vector<T>(size_x, 1);
-        hy_gold[i] = host_vector<T>(size_y, 0); // gold swapped 1 and 0
+        hx[i]      = host_vector<T>(size_x);
+        hy[i]      = host_vector<T>(size_y);
+        hx_gold[i] = host_vector<T>(size_x);
+        hy_gold[i] = host_vector<T>(size_y); 
     }
 
     // Initial Data on CPU
@@ -128,25 +128,14 @@ void testing_swap_batched(const Arguments& arg)
         for(size_t j = 0; j < N; j++)
         {
             hy[i][j * abs_incy] = hx[i][j * abs_incx] + 1.0;
-        };        
+        }
         hx_gold[i] = hx[i]; // swapped later by cblas_swap
         hy_gold[i] = hy[i];   
     }
 
-    // swap vector is easy in STL; hy_gold = hx: save a swap in hy_gold which will be output of CPU
-    // BLAS
 
     device_batch_vector<T> dxvec(batch_count, size_x);
     device_batch_vector<T> dyvec(batch_count, size_y);
-    /*
-    T** hdx = new T*[batch_count]; // must create device ptr array on host
-    T** hdy = new T*[batch_count]; // gpu pointers on cpu
-    for(int i = 0; i < batch_count; i++)
-    {
-        hipMalloc(&hdx[i], size_x * sizeof(T));
-        hipMalloc(&hdy[i], size_y * sizeof(T));
-    }
-    */
 
     // copy data from host to device
     for(int i = 0; i < batch_count; i++)
@@ -166,7 +155,6 @@ void testing_swap_batched(const Arguments& arg)
         CHECK_HIP_ERROR(hipErrorOutOfMemory);
         return;
     }
-    
 
     // copy gpu vector pointers from host to device pointer array
     CHECK_HIP_ERROR(hipMemcpy(dx_pvec, dxvec, sizeof(T*) * batch_count, hipMemcpyHostToDevice));
@@ -240,13 +228,6 @@ void testing_swap_batched(const Arguments& arg)
                   << std::endl;
     }
 
-    // for(int i = 0; i < batch_count; i++)
-    // {
-    //     CHECK_HIP_ERROR(hipFree(hdx[i]));
-    //     CHECK_HIP_ERROR(hipFree(hdy[i])); // gpu pointers on cpu
-    // }
-    // delete[] hdx;
-    // delete[] hdy;
     CHECK_HIP_ERROR(hipFree(dx_pvec));
     CHECK_HIP_ERROR(hipFree(dy_pvec));
 }
