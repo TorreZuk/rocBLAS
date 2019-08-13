@@ -85,7 +85,7 @@ Tests:
   category: quick
   N: [ -1, 0, 5, 10, 1025, 7111, 10000, 33792 ]
   incx_incy: *incx_incy_range
-  batch_count: [1, 10]
+  batch_count: [-1, 0, 1, 10]
   function: 
     - swap_batched: *single_double_precisions_complex_real
 
@@ -93,7 +93,7 @@ Tests:
   category: quick
   N: [ -1, 0, 5, 10, 1025, 7111, 10000, 33792 ] 
   incx_incy: *incx_incy_range 
-  batch_count: [1, 10]
+  batch_count: [-1, 0, 1, 10]
   stride_x: [1, 68000]
   stride_y: [1, 68000]
   function:

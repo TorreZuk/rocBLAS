@@ -111,13 +111,13 @@ namespace
 
         size_t abs_incx = incx >= 0 ? incx : -incx;
         size_t abs_incy = incy >= 0 ? incy : -incy;
-        if((stridex < n * abs_incx) || (stridey < n * abs_incy) || (batch_count <= 0))
+        if((stridex < n * abs_incx) || (stridey < n * abs_incy) || (batch_count < 0))
             return rocblas_status_invalid_size;
 
         RETURN_ZERO_DEVICE_MEMORY_SIZE_IF_QUERIED(handle);
 
         // Quick return if possible.
-        if(n <= 0)
+        if(n <= 0 || batch_count == 0)
             return rocblas_status_success;
 
         hipStream_t rocblas_stream = handle->rocblas_stream;
