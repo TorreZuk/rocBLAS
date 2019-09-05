@@ -101,24 +101,27 @@ void testing_swap_strided_batched(const Arguments& arg)
     size_t size_y = (size_t)stridey;
 
     // Naming: dX is in GPU (device) memory. hK is in CPU (host) memory, plz follow this practice
-    host_vector<T> hx(size_x * batch_count, 1);
-    host_vector<T> hy(size_y * batch_count, 0);
-    host_vector<T> hx_gold(size_x * batch_count, 0);
-    host_vector<T> hy_gold(size_y * batch_count, 1); // swapped
+    host_vector<T> hx(size_x * batch_count);
+    host_vector<T> hy(size_y * batch_count);
+    host_vector<T> hx_gold(size_x * batch_count);
+    host_vector<T> hy_gold(size_y * batch_count); 
 
     // Initial Data on CPU
-    // rocblas_seedrand();
-    // rocblas_init<T>(hx, 1, N, abs_incx);
+    rocblas_seedrand();
+    // make all batches hx
+    rocblas_init<T>(hx, 1, size_x * batch_count, 1);
     // make hy different to hx
-    // for(size_t i = 0; i < N; i++)
-    // {
-    //     hy[i * abs_incy] = hx[i * abs_incx] + 1.0;
-    // };
+    for(int i = 0; i < batch_count; i++)
+    {
+        for(size_t j = 0; j < N; j++)
+        {
+            hy[i * stridex + j * abs_incy] = hx[i * stridex + j * abs_incx] + 1.0;
+        }
+    }
 
-    // swap vector is easy in STL; hy_gold = hx: save a swap in hy_gold which will be output of CPU
-    // BLAS
-    // hx_gold = hx;
-    // hy_gold = hy;
+    hx_gold = hx;
+    hy_gold = hy;
+    // use cpu BLAS to swap gold
 
     // allocate memory on device
     device_vector<T> dx(size_x * batch_count);
@@ -149,7 +152,10 @@ void testing_swap_strided_batched(const Arguments& arg)
 
         // CPU BLAS
         cpu_time_used = get_time_us();
-        //cblas_swap<T>(N, hx_gold, incx, hy_gold, incy);
+        for(int i = 0; i < batch_count; i++)
+        {
+            cblas_swap<T>(N, &hx_gold[i * stridex], incx, &hy_gold[i * stridey], incy);
+        }
         cpu_time_used = get_time_us() - cpu_time_used;
 
         if(arg.unit_check)

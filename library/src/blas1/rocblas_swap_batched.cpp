@@ -93,7 +93,7 @@ namespace
             return rocblas_status_success;
 
         hipStream_t rocblas_stream = handle->rocblas_stream;
-        int         blocks         = (n - 1) / NB + 1;
+        rocblas_int blocks         = (n - 1) / NB + 1;
         dim3        grid(blocks, batch_count);
         dim3        threads(NB);
 
