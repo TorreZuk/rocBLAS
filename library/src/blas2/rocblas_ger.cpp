@@ -2,10 +2,50 @@
  * Copyright 2016-2019 Advanced Micro Devices, Inc.
  * ************************************************************************ */
 #include "rocblas_ger.hpp"
-#include "handle.h"
 #include "logging.h"
-#include "rocblas.h"
 #include "utility.h"
+
+
+
+template ROCBLAS_EXPORT rocblas_status
+    rocblas_ger_template<float, float, float, float>(rocblas_handle handle,
+                                                     rocblas_int    m,
+                                                     rocblas_int    n,
+                                                     const float*   alpha,
+                                                     rocblas_stride stride_alpha,
+                                                     const float*   x,
+                                                     rocblas_int    offsetx,
+                                                     rocblas_int    incx,
+                                                     rocblas_int    stridex,
+                                                     const float*   y,
+                                                     rocblas_int    offsety,
+                                                     rocblas_int    incy,
+                                                     rocblas_int    stridey,
+                                                     float*         A,
+                                                     rocblas_int    offsetA,
+                                                     rocblas_int    lda,
+                                                     rocblas_int    strideA,
+                                                     rocblas_int    batch_count);
+
+template ROCBLAS_EXPORT rocblas_status
+    rocblas_ger_template<double, double, double, double>(rocblas_handle handle,
+                                                         rocblas_int    m,
+                                                         rocblas_int    n,
+                                                         const double*  alpha,
+                                                         rocblas_stride stride_alpha,
+                                                         const double*  x,
+                                                         rocblas_int    offsetx,
+                                                         rocblas_int    incx,
+                                                         rocblas_int    stridex,
+                                                         const double*  y,
+                                                         rocblas_int    offsety,
+                                                         rocblas_int    incy,
+                                                         rocblas_int    stridey,
+                                                         double*        A,
+                                                         rocblas_int    offsetA,
+                                                         rocblas_int    lda,
+                                                         rocblas_int    strideA,
+                                                         rocblas_int    batch_count);
 
 namespace
 {

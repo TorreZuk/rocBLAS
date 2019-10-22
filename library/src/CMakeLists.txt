@@ -216,6 +216,24 @@ include( GenerateExportHeader )
 set_target_properties( rocblas PROPERTIES CXX_VISIBILITY_PRESET "hidden" VISIBILITY_INLINES_HIDDEN ON )
 generate_export_header( rocblas EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/include/rocblas-export.h )
 
+# generate header for exported use
+set( SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}" ) 
+set( ROCBLAS_EXPORTED_TEMPLATES "${CMAKE_CURRENT_SOURCE_DIR}/../include/rocblas-exported-templates.hpp" )
+add_custom_command( TARGET rocblas PRE_BUILD
+  COMMAND awk -f template-export.awk ${SRC_DIR}/blas2/*.cpp ${SRC_DIR}/blas1/*.cpp > ${ROCBLAS_EXPORTED_TEMPLATES}
+  DEPENDS ${SRC_DIR}
+  COMMENT "Generating code from ${SRC_DIR}."
+  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"  
+)
+# generate header for export use
+set( ROCBLAS_PROTO_TEMPLATES "${CMAKE_CURRENT_SOURCE_DIR}/../include/rocblas-exported-proto.hpp" )
+add_custom_command( TARGET rocblas PRE_BUILD
+  COMMAND awk -f template-proto.awk ${SRC_DIR}/blas2/*.hpp ${SRC_DIR}/blas1/*.hpp > ${ROCBLAS_PROTO_TEMPLATES}
+  DEPENDS ${SRC_DIR}
+  COMMENT "Generating prototypes from ${SRC_DIR}."
+  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"  
+)
+
 # Following Boost conventions of prefixing 'lib' on static built libraries, across all platforms
 if( NOT BUILD_SHARED_LIBS )
   set_target_properties( rocblas PROPERTIES PREFIX "lib" )

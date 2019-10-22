@@ -45,3 +45,10 @@ rocblas_status rocblas_swap_template(
 
     return rocblas_status_success;
 }
+
+
+extern template rocblas_status rocblas_swap_template<256, float>(
+  rocblas_handle handle, rocblas_int n, float* x, rocblas_int incx, float* y, rocblas_int incy);
+
+extern template rocblas_status rocblas_swap_template<256, double>(
+   rocblas_handle handle, rocblas_int n, double* x, rocblas_int incx, double* y, rocblas_int incy);

@@ -7,6 +7,96 @@
 #include "rocblas.h"
 #include "utility.h"
 
+template ROCBLAS_EXPORT rocblas_status
+    rocblas_gemv_template<float, float, float, float>(rocblas_handle    handle,
+                                                      rocblas_operation transA,
+                                                      rocblas_int       m,
+                                                      rocblas_int       n,
+                                                      const float*      alpha,
+                                                      const float*      A,
+                                                      rocblas_int       offseta,
+                                                      rocblas_int       lda,
+                                                      rocblas_stride    strideA,
+                                                      const float*      x,
+                                                      rocblas_int       offsetx,
+                                                      rocblas_int       incx,
+                                                      rocblas_stride    stridex,
+                                                      const float*      beta,
+                                                      float*            y,
+                                                      rocblas_int       offsety,
+                                                      rocblas_int       incy,
+                                                      rocblas_stride    stridey,
+                                                      rocblas_int       batch_count);
+
+template ROCBLAS_EXPORT rocblas_status
+    rocblas_gemv_template<double, double, double, double>(rocblas_handle    handle,
+                                                          rocblas_operation transA,
+                                                          rocblas_int       m,
+                                                          rocblas_int       n,
+                                                          const double*     alpha,
+                                                          const double*     A,
+                                                          rocblas_int       offseta,
+                                                          rocblas_int       lda,
+                                                          rocblas_stride    strideA,
+                                                          const double*     x,
+                                                          rocblas_int       offsetx,
+                                                          rocblas_int       incx,
+                                                          rocblas_stride    stridex,
+                                                          const double*     beta,
+                                                          double*           y,
+                                                          rocblas_int       offsety,
+                                                          rocblas_int       incy,
+                                                          rocblas_stride    stridey,
+                                                          rocblas_int       batch_count);
+
+template ROCBLAS_EXPORT rocblas_status
+    rocblas_gemv_template<rocblas_float_complex,
+                          rocblas_float_complex,
+                          rocblas_float_complex,
+                          rocblas_float_complex>(rocblas_handle               handle,
+                                                 rocblas_operation            transA,
+                                                 rocblas_int                  m,
+                                                 rocblas_int                  n,
+                                                 const rocblas_float_complex* alpha,
+                                                 const rocblas_float_complex* A,
+                                                 rocblas_int                  offseta,
+                                                 rocblas_int                  lda,
+                                                 rocblas_stride               strideA,
+                                                 const rocblas_float_complex* x,
+                                                 rocblas_int                  offsetx,
+                                                 rocblas_int                  incx,
+                                                 rocblas_stride               stridex,
+                                                 const rocblas_float_complex* beta,
+                                                 rocblas_float_complex*       y,
+                                                 rocblas_int                  offsety,
+                                                 rocblas_int                  incy,
+                                                 rocblas_stride               stridey,
+                                                 rocblas_int                  batch_count);
+
+template ROCBLAS_EXPORT rocblas_status
+    rocblas_gemv_template<rocblas_double_complex,
+                          rocblas_double_complex,
+                          rocblas_double_complex,
+                          rocblas_double_complex>(rocblas_handle                handle,
+                                                  rocblas_operation             transA,
+                                                  rocblas_int                   m,
+                                                  rocblas_int                   n,
+                                                  const rocblas_double_complex* alpha,
+                                                  const rocblas_double_complex* A,
+                                                  rocblas_int                   offseta,
+                                                  rocblas_int                   lda,
+                                                  rocblas_stride                strideA,
+                                                  const rocblas_double_complex* x,
+                                                  rocblas_int                   offsetx,
+                                                  rocblas_int                   incx,
+                                                  rocblas_stride                stridex,
+                                                  const rocblas_double_complex* beta,
+                                                  rocblas_double_complex*       y,
+                                                  rocblas_int                   offsety,
+                                                  rocblas_int                   incy,
+                                                  rocblas_stride                stridey,
+                                                  rocblas_int                   batch_count);
+
 namespace
 {
     template <typename>

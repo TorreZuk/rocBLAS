@@ -5,6 +5,12 @@
 #include "logging.h"
 #include "utility.h"
 
+template ROCBLAS_EXPORT rocblas_status rocblas_swap_template<256, float>(
+    rocblas_handle handle, rocblas_int n, float* x, rocblas_int incx, float* y, rocblas_int incy);
+
+template ROCBLAS_EXPORT rocblas_status rocblas_swap_template<256, double>(
+    rocblas_handle handle, rocblas_int n, double* x, rocblas_int incx, double* y, rocblas_int incy);
+
 namespace
 {
     template <typename>
