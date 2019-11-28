@@ -41,7 +41,7 @@ typedef struct
  *         with precision T.
  */
 template <typename T>
-class rocblas_complex_num
+class ROCBLAS_EXPORT rocblas_complex_num
 {
     T x; // The real part of the number.
     T y; // The imaginary part of the number.
