@@ -167,6 +167,8 @@ void testing_logging()
 
         rocblas_syr<T>(handle, uplo, n, &alpha, dx, incx, da, lda);
 
+        rocblas_symv<T>(handle, uplo, n, &alpha, da, lda, dx, incx, &beta, dy, incy);
+
         rocblas_gemv<T>(handle, transA, m, n, &alpha, da, lda, dx, incx, &beta, dy, incy);
 
         rocblas_trmv<T>(handle, uplo, transA, diag, m, da, lda, dx, incx);

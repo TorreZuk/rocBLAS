@@ -1444,13 +1444,76 @@ rocblas_status (*rocblas_symv)(rocblas_handle handle,
                                T*             y,
                                rocblas_int    incy);
 
-/* not implemented
 template <>
 static constexpr auto rocblas_symv<float> = rocblas_ssymv;
 
 template <>
 static constexpr auto rocblas_symv<double> = rocblas_dsymv;
-*/
+
+template <>
+static constexpr auto rocblas_symv<rocblas_float_complex> = rocblas_csymv;
+
+template <>
+static constexpr auto rocblas_symv<rocblas_double_complex> = rocblas_zsymv;
+
+// symv_batched
+template <typename T>
+rocblas_status (*rocblas_symv_batched)(rocblas_handle handle,
+                                       rocblas_fill   uplo,
+                                       rocblas_int    n,
+                                       const T*       alpha,
+                                       const T* const A[],
+                                       rocblas_int    lda,
+                                       const T* const x[],
+                                       rocblas_int    incx,
+                                       const T*       beta,
+                                       T*             y[],
+                                       rocblas_int    incy,
+                                       rocblas_int    batch_count);
+
+template <>
+static constexpr auto rocblas_symv_batched<float> = rocblas_ssymv_batched;
+
+template <>
+static constexpr auto rocblas_symv_batched<double> = rocblas_dsymv_batched;
+
+template <>
+static constexpr auto rocblas_symv_batched<rocblas_float_complex> = rocblas_csymv_batched;
+
+template <>
+static constexpr auto rocblas_symv_batched<rocblas_double_complex> = rocblas_zsymv_batched;
+
+// symv_strided_batched
+template <typename T>
+rocblas_status (*rocblas_symv_strided_batched)(rocblas_handle handle,
+                                               rocblas_fill   uplo,
+                                               rocblas_int    n,
+                                               const T*       alpha,
+                                               const T*       A,
+                                               rocblas_int    lda,
+                                               rocblas_stride stride_a,
+                                               const T*       x,
+                                               rocblas_int    incx,
+                                               rocblas_stride stride_x,
+                                               const T*       beta,
+                                               T*             y,
+                                               rocblas_int    incy,
+                                               rocblas_stride stride_y,
+                                               rocblas_int    batch_count);
+
+template <>
+static constexpr auto rocblas_symv_strided_batched<float> = rocblas_ssymv_strided_batched;
+
+template <>
+static constexpr auto rocblas_symv_strided_batched<double> = rocblas_dsymv_strided_batched;
+
+template <>
+static constexpr auto
+    rocblas_symv_strided_batched<rocblas_float_complex> = rocblas_csymv_strided_batched;
+
+template <>
+static constexpr auto
+    rocblas_symv_strided_batched<rocblas_double_complex> = rocblas_zsymv_strided_batched;
 
 /*
  * ===========================================================================
