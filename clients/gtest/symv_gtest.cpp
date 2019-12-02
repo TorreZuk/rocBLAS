@@ -21,26 +21,22 @@ namespace
     {
     };
 
-#if 0 // TODO: Right now rocblas_symv is unimplemented
-
-// When the condition in the second argument is satisfied, the type combination
-// is valid. When the condition is false, this specialization does not apply.
-template <typename T>
-struct symv_testing<
-    T,
-    typename std::enable_if<std::is_same<T, float>{} || std::is_same<T, double>{}>::type>
-    : rocblas_test_valid
-{
-    void operator()(const Arguments& arg)
+    // When the condition in the second argument is satisfied, the type combination
+    // is valid. When the condition is false, this specialization does not apply.
+    template <typename T>
+    struct symv_testing<
+        T,
+        typename std::enable_if<std::is_same<T, float>{} || std::is_same<T, double>{}>::type>
+        : rocblas_test_valid
     {
-        if(!strcmp(arg.function, "symv"))
-            testing_symv<T>(arg);
-        else
-            FAIL() << "Internal error: Test called with unknown function: " << arg.function;
-    }
-};
-
-#endif
+        void operator()(const Arguments& arg)
+        {
+            if(!strcmp(arg.function, "symv"))
+                testing_symv<T>(arg);
+            else
+                FAIL() << "Internal error: Test called with unknown function: " << arg.function;
+        }
+    };
 
     struct symv : RocBLAS_Test<symv, symv_testing>
     {
