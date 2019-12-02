@@ -749,6 +749,46 @@ inline void cblas_trmv(rocblas_fill      uplo,
                 incx);
 }
 
+// spmv
+template <typename T>
+void cblas_spmv(rocblas_fill uplo,
+                rocblas_int  n,
+                T            alpha,
+                T*           A,
+                T*           x,
+                rocblas_int  incx,
+                T            beta,
+                T*           y,
+                rocblas_int  incy);
+
+template <>
+inline void cblas_spmv(rocblas_fill uplo,
+                       rocblas_int  n,
+                       float        alpha,
+                       float*       A,
+                       float*       x,
+                       rocblas_int  incx,
+                       float        beta,
+                       float*       y,
+                       rocblas_int  incy)
+{
+    cblas_sspmv(CblasColMajor, CBLAS_UPLO(uplo), n, alpha, A, x, incx, beta, y, incy);
+}
+
+template <>
+inline void cblas_spmv(rocblas_fill uplo,
+                       rocblas_int  n,
+                       double       alpha,
+                       double*      A,
+                       double*      x,
+                       rocblas_int  incx,
+                       double       beta,
+                       double*      y,
+                       rocblas_int  incy)
+{
+    cblas_dspmv(CblasColMajor, CBLAS_UPLO(uplo), n, alpha, A, x, incx, beta, y, incy);
+}
+
 // symv
 template <typename T>
 void cblas_symv(rocblas_fill uplo,
