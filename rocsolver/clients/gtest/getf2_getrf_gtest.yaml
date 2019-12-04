@@ -1,0 +1,28 @@
+---
+include: ../../../clients/include/rocblas_common.yaml
+
+Definitions:
+  - &small_matrix_size_range
+    - { M:   10, lda:   10 }
+
+  - &large_matrix_size_range
+    - { M:   10, lda:   10 }
+
+  - &n_size_range
+    - { N:   1 }
+
+Tests:
+- name: getf2_small
+  category: quick
+  function: getf2
+  precision: *single_double_precisions
+  matrix_size: *small_matrix_size_range
+  n_size: *n_size_range
+
+- name: getf2_large
+  category: nightly
+  function: getf2
+  precision: *single_double_precisions
+  matrix_size: *large_matrix_size_range
+  n_size: *n_size_range
+...

@@ -19,6 +19,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define ROCBLAS_EXPORT_NOINLINE __attribute__((visibility("default"))) __attribute__((noinline))
+
 /*! \brief rocblas_handle is a structure holding the rocblas library context.
  * It must be initialized using rocblas_create_handle()
  * and the returned handle must be passed
@@ -103,6 +105,13 @@ typedef enum rocblas_side_
                         Hermitian or triangular matrix on the right. */
     rocblas_side_both  = 143
 } rocblas_side;
+
+/*! \brief Used to specify the order in which multiple elementary matrices are applied together. */
+typedef enum rocblas_direct_
+{
+    rocblas_forward_direction  = 171, /**< Elementary matrices applied from the right. */
+    rocblas_backward_direction = 172, /**< Elementary matrices applied from the left. */
+} rocblas_direct;
 
 /* ============================================================================================ */
 /**

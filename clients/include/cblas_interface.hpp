@@ -29,6 +29,9 @@ void spotrf_(char* uplo, int* m, float* A, int* lda, int* info);
 void dpotrf_(char* uplo, int* m, double* A, int* lda, int* info);
 void cpotrf_(char* uplo, int* m, rocblas_float_complex* A, int* lda, int* info);
 void zpotrf_(char* uplo, int* m, rocblas_double_complex* A, int* lda, int* info);
+
+void sgetf2_(int* m, int* n, float* A, int* lda, int* ipiv, int* info);
+void dgetf2_(int* m, int* n, double* A, int* lda, int* ipiv, int* info);
 }
 
 /*
@@ -644,6 +647,7 @@ inline void cblas_gemv(rocblas_operation       transA,
 }
 
 // tbmv
+
 template <typename T>
 void cblas_tbmv(rocblas_fill      uplo,
                 rocblas_operation transA,
@@ -1509,7 +1513,7 @@ inline void cblas_trmm(rocblas_side                  side,
 }
 
 // getrf
-template <typename T>
+/*template <typename T>
 rocblas_int cblas_getrf(rocblas_int m, rocblas_int n, T* A, rocblas_int lda, rocblas_int* ipiv);
 
 template <>
@@ -1546,7 +1550,7 @@ inline rocblas_int cblas_getrf(
     rocblas_int info;
     zgetrf_(&m, &n, A, &lda, ipiv, &info);
     return info;
-}
+}*/
 
 // potrf
 template <typename T>
@@ -1584,6 +1588,49 @@ inline rocblas_int cblas_potrf(char uplo, rocblas_int m, rocblas_double_complex*
     return info;
 }
 
+/*
+ * ===========================================================================
+ *    LAPACK routines (for rocsolver)
+ * ===========================================================================
+ */
+
+//getf2
+template <typename T>
+void cblas_getf2(
+    rocblas_int m, rocblas_int n, T* A, rocblas_int lda, rocblas_int* ipiv, rocblas_int* info);
+
+template <>
+inline void cblas_getf2(
+    rocblas_int m, rocblas_int n, float* A, rocblas_int lda, rocblas_int* ipiv, rocblas_int* info)
+{
+    sgetf2_(&m, &n, A, &lda, ipiv, info);
+}
+
+template <>
+inline void cblas_getf2(
+    rocblas_int m, rocblas_int n, double* A, rocblas_int lda, rocblas_int* ipiv, rocblas_int* info)
+{
+    dgetf2_(&m, &n, A, &lda, ipiv, info);
+}
+
+//getrf
+template <typename T>
+void cblas_getrf(
+    rocblas_int m, rocblas_int n, T* A, rocblas_int lda, rocblas_int* ipiv, rocblas_int* info);
+
+template <>
+inline void cblas_getrf<float>(
+    rocblas_int m, rocblas_int n, float* A, rocblas_int lda, rocblas_int* ipiv, rocblas_int* info)
+{
+    sgetrf_(&m, &n, A, &lda, ipiv, info);
+}
+
+template <>
+inline void cblas_getrf<double>(
+    rocblas_int m, rocblas_int n, double* A, rocblas_int lda, rocblas_int* ipiv, rocblas_int* info)
+{
+    dgetrf_(&m, &n, A, &lda, ipiv, info);
+}
 /* ============================================================================================ */
 
 #endif /* _CBLAS_INTERFACE_ */

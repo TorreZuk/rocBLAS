@@ -227,6 +227,8 @@ Arguments:
   - ldb: rocblas_int
   - ldc: rocblas_int
   - ldd: rocblas_int
+  - ldv: rocblas_int
+  - ldt: rocblas_int
   - a_type: rocblas_datatype
   - b_type: rocblas_datatype
   - c_type: rocblas_datatype
@@ -242,9 +244,11 @@ Arguments:
   - betai: c_double
   - transA: c_char
   - transB: c_char
+  - transH: c_char
   - side: c_char
   - uplo: c_char
   - diag: c_char
+  - direct: c_char
   - batch_count: rocblas_int
   - stride_a: rocblas_int
   - stride_b: rocblas_int
@@ -252,6 +256,7 @@ Arguments:
   - stride_d: rocblas_int
   - stride_x: rocblas_int
   - stride_y: rocblas_int
+  - stride_p: rocblas_int
   - norm_check: rocblas_int
   - unit_check: rocblas_int
   - timing: rocblas_int
@@ -303,6 +308,8 @@ Defaults:
   M: -1
   N: -1
   K: -1
+  ldv: 0
+  ldt: 0
   incx: 0
   incy: 0
   incd: 0
@@ -313,10 +320,13 @@ Defaults:
   betai: 0.0
   transA: '*'
   transB: '*'
+  transH: '*'
   side: '*'
   uplo: '*'
   diag: '*'
+  direct: '*'
   batch_count: -1
+  stride_p: 0
   norm_check: 0
   unit_check: 1
   timing: 0

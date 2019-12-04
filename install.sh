@@ -24,6 +24,7 @@ rocBLAS build & installation helper script
            --hip-clang         Build library for amdgpu backend using hip-clang
       -n | --no_tensile        Build subset of library that does not require Tensile
       -s | --tensile-host      Build with Tensile host
+      -r | --rocsolver         Build rocSOLVER
 EOF
 #          --prefix            Specify an alternate CMAKE_INSTALL_PREFIX for cmake
 #          --cuda              Build library for cuda backend
@@ -40,10 +41,10 @@ supported_distro( )
   fi
 
   case "${ID}" in
-    ubuntu|centos|rhel|fedora|sles|opensuse-leap)
+    ubuntu|centos|rhel|fedora|sles)
         true
         ;;
-    *)  printf "This script is currently supported on Ubuntu, CentOS, RHEL, SLES, OpenSUSE-Leap, and Fedora\n"
+    *)  printf "This script is currently supported on Ubuntu, CentOS, RHEL and Fedora\n"
         exit 2
         ;;
   esac
@@ -192,7 +193,7 @@ install_packages( )
       fi
       ;;
 
-    sles|opensuse-leap)
+    sles)
        install_zypper_packages "${client_dependencies_sles[@]}"
 
         if [[ "${build_clients}" == true ]]; then
@@ -200,7 +201,7 @@ install_packages( )
         fi
         ;;
     *)
-      echo "This script is currently supported on Ubuntu, CentOS, RHEL, SLES, OpenSUSE-Leap, and Fedora"
+      echo "This script is currently supported on Ubuntu, CentOS, RHEL and Fedora"
       exit 2
       ;;
   esac
@@ -249,11 +250,7 @@ build_tensile_host=false
 cpu_ref_lib=blis
 build_release=true
 build_hip_clang=false
-
-rocm_path=/opt/rocm
-if ! [ -z ${ROCM_PATH+x} ]; then
-    rocm_path=${ROCM_PATH}
-fi
+build_rocsolver=false
 
 # #################################################
 # Parameter parsing
@@ -262,7 +259,7 @@ fi
 # check if we have a modern version of getopt that can handle whitespace and long parameters
 getopt -T
 if [[ $? -eq 4 ]]; then
-  GETOPT_PARSE=$(getopt --name "${0}" --longoptions help,install,clients,dependencies,debug,hip-clang,no_tensile,tensile_host,logic:,cov:,fork:,branch:test_local_path:,cpu_ref_lib: --options nshicdgl:o:f:b:t: -- "$@")
+  GETOPT_PARSE=$(getopt --name "${0}" --longoptions help,rocsolver,install,clients,dependencies,debug,hip-clang,no_tensile,tensile_host,logic:,cov:,fork:,branch:test_local_path:,cpu_ref_lib: --options rnshicdgl:o:f:b:t: -- "$@")
 else
   echo "Need a new version of getopt"
   exit 1
@@ -313,6 +310,9 @@ while true; do
         shift ;;
     -s|--tensile-host)
         build_tensile_host=true
+        shift ;;
+    -r|--rocsolver)
+        build_rocsolver=true
         shift ;;
     --cuda)
         build_cuda=true
@@ -386,7 +386,7 @@ if [[ "${install_dependencies}" == true ]]; then
     #Download prebuilt AMD multithreaded blis
     if [[ "${cpu_ref_lib}" == blis ]] && [[ ! -f "${build_dir}/deps/blis/lib/libblis.so" ]]; then
       case "${ID}" in
-          centos|rhel|sles|opensuse-leap)
+          centos|rhel|sles)
               curl -L  https://github.com/amd/blis/releases/download/2.0/aocl-blis-mt-centos-2.0.tar.gz > blis.tar.gz
               ;;
           ubuntu)
@@ -413,7 +413,7 @@ if [[ "${cpu_ref_lib}" == blis ]] && [[ ! -f "${build_dir}/deps/blis/lib/libblis
   pushd .
   mkdir -p ${build_dir}/deps && cd ${build_dir}/deps
   case "${ID}" in
-    centos|rhel|sles|opensuse-leap)
+    centos|rhel|sles)
       curl -L  https://github.com/amd/blis/releases/download/2.0/aocl-blis-mt-centos-2.0.tar.gz > blis.tar.gz
       ;;
     ubuntu)
@@ -434,7 +434,7 @@ fi
 
 # We append customary rocm path; if user provides custom rocm path in ${path}, our
 # hard-coded path has lesser priority
-export PATH=${PATH}:${rocm_path}/bin:${rocm_path}/hip/bin:${rocm_path}/hcc/bin
+export PATH=${PATH}:/opt/rocm/bin
 
 pushd .
   # #################################################
@@ -442,10 +442,11 @@ pushd .
   # #################################################
   cmake_common_options=""
   cmake_client_options=""
-
-  cmake_common_options="${cmake_common_options} -DROCM_PATH=${rocm_path} -lpthread -DTensile_LOGIC=${tensile_logic} -DTensile_CODE_OBJECT_VERSION=${tensile_cov}"
+  tensile_opt=""
+  rocsolver_opt=""
 
   # build type
+  cmake_common_options="${cmake_common_options} -lpthread"
   if [[ "${build_release}" == true ]]; then
     mkdir -p ${build_dir}/release/clients && cd ${build_dir}/release
     cmake_common_options="${cmake_common_options} -DCMAKE_BUILD_TYPE=Release"
@@ -453,57 +454,57 @@ pushd .
     mkdir -p ${build_dir}/debug/clients && cd ${build_dir}/debug
     cmake_common_options="${cmake_common_options} -DCMAKE_BUILD_TYPE=Debug"
   fi
-
-  if [[ -n "${tensile_fork}" ]]; then
-    cmake_common_options="${cmake_common_options} -Dtensile_fork=${tensile_fork}"
-  fi
-
-  if [[ -n "${tensile_tag}" ]]; then
-    cmake_common_options="${cmake_common_options} -Dtensile_tag=${tensile_tag}"
-  fi
-
-  if [[ -n "${tensile_test_local_path}" ]]; then
-    cmake_common_options="${cmake_common_options} -DTensile_TEST_LOCAL_PATH=${tensile_test_local_path}"
-  fi
-
-  tensile_opt=""
-  if [[ "${build_tensile}" == false ]]; then
-    tensile_opt="${tensile_opt} -DBUILD_WITH_TENSILE=OFF"
-  fi
-
-  if [[ "${build_tensile_host}" == true ]]; then
-    tensile_opt="${tensile_opt} -DBUILD_WITH_TENSILE_HOST=ON"
-  fi
-
-  cmake_common_options="${cmake_common_options} ${tensile_opt}"
-
-
-  if [[ "${build_clients}" == true ]]; then
-    cmake_client_options="${cmake_client_options} -DBUILD_CLIENTS_SAMPLES=ON -DBUILD_CLIENTS_TESTS=ON -DBUILD_CLIENTS_BENCHMARKS=ON -DLINK_BLIS=${LINK_BLIS}"
-  fi
-
+  case "${ID}" in
+    centos|rhel)
+    cmake_common_options="${cmake_common_options} -DCMAKE_FIND_ROOT_PATH=/usr/lib64/llvm7.0/lib/cmake/"
+    ;;
+  esac
   compiler="hcc"
   if [[ "${build_cuda}" == true || "${build_hip_clang}" == true ]]; then
     compiler="hipcc"
     cmake_common_options="${cmake_common_options} -DTensile_COMPILER=hipcc"
   fi
 
+  #rocsolver
+  if [[ "${build_rocsolver}" == true ]]; then
+    rocsolver_opt="${rocsolver_opt} -DBUILD_ROCSOLVER=ON"
+  else
+    rocsolver_opt="${rocsolver_opt} -DBUILD_ROCSOLVER=OFF"
+  fi
 
-  case "${ID}" in
-    centos|rhel)
-    cmake_common_options="${cmake_common_options} -DCMAKE_FIND_ROOT_PATH=/usr/lib64/llvm7.0/lib/cmake/"
-    ;;
-  esac
+  #tensile
+  if [[ "${build_tensile}" == false ]]; then
+    tensile_opt="${tensile_opt} -DBUILD_WITH_TENSILE=OFF"
+  else
+    tensile_opt="${tensile_opt} -DTensile_LOGIC=${tensile_logic} -DTensile_CODE_OBJECT_VERSION=${tensile_cov}"
+    if [[ -n "${tensile_fork}" ]]; then
+      tensile_opt="${tensile_opt} -Dtensile_fork=${tensile_fork}"
+    fi
+    if [[ -n "${tensile_tag}" ]]; then
+      tensile_opt="${tensile_opt} -Dtensile_tag=${tensile_tag}"
+    fi
+    if [[ -n "${tensile_test_local_path}" ]]; then
+      tensile_opt="${tensile_opt} -DTensile_TEST_LOCAL_PATH=${tensile_test_local_path}"
+    fi
+    if [[ "${build_tensile_host}" == true ]]; then
+      tensile_opt="${tensile_opt} -DBUILD_WITH_TENSILE_HOST=ON"
+    fi
+  fi
+
+  # clients
+  if [[ "${build_clients}" == true ]]; then
+    cmake_client_options="${cmake_client_options} -DBUILD_CLIENTS_SAMPLES=ON -DBUILD_CLIENTS_TESTS=ON -DBUILD_CLIENTS_BENCHMARKS=ON -DLINK_BLIS=${LINK_BLIS}"
+  fi
 
 
   # Uncomment for cmake debugging
-  # CXX=${compiler} ${cmake_executable} -Wdev --debug-output --trace ${cmake_common_options} -DCPACK_SET_DESTDIR=OFF -DCMAKE_INSTALL_PREFIX=rocblas-install -DCPACK_PACKAGING_INSTALL_PREFIX=${rocm_path} ../..
+  # CXX=${compiler} ${cmake_executable} -Wdev --debug-output --trace ${cmake_common_options} -DCPACK_SET_DESTDIR=OFF -DCMAKE_INSTALL_PREFIX=rocblas-install -DCPACK_PACKAGING_INSTALL_PREFIX=/opt/rocm ../..
 
   # Build library with AMD toolchain because of existense of device kernels
   if [[ "${build_clients}" == true ]]; then
-    CXX=${compiler} ${cmake_executable} ${cmake_common_options} ${cmake_client_options} -DCPACK_SET_DESTDIR=OFF -DCMAKE_INSTALL_PREFIX=rocblas-install -DCPACK_PACKAGING_INSTALL_PREFIX=${rocm_path} ../..
+    CXX=${compiler} ${cmake_executable} ${cmake_common_options} ${tensile_opt} ${rocsolver_opt} ${cmake_client_options} -DCPACK_SET_DESTDIR=OFF -DCMAKE_INSTALL_PREFIX=to_install -DCPACK_PACKAGING_INSTALL_PREFIX=/opt/rocm ../..
   else
-    CXX=${compiler} ${cmake_executable} ${cmake_common_options} -DCPACK_SET_DESTDIR=OFF -DCMAKE_INSTALL_PREFIX=rocblas-install -DCPACK_PACKAGING_INSTALL_PREFIX=${rocm_path} ../..
+    CXX=${compiler} ${cmake_executable} ${cmake_common_options} ${tensile_opt} ${rocsolver_opt} -DCPACK_SET_DESTDIR=OFF -DCMAKE_INSTALL_PREFIX=to-install -DCPACK_PACKAGING_INSTALL_PREFIX=/opt/rocm ../..
   fi
   check_exit_code "$?"
 
@@ -528,7 +529,7 @@ pushd .
       fedora)
         elevate_if_not_root dnf install rocblas-*.rpm
       ;;
-      sles|opensuse-leap)
+      sles)
         elevate_if_not_root zypper --no-gpg-checks in -y install rocblas-*.rpm
       ;;
     esac

@@ -33,6 +33,8 @@ struct Arguments
     rocblas_int ldb;
     rocblas_int ldc;
     rocblas_int ldd;
+    rocblas_int ldv;
+    rocblas_int ldt;
 
     rocblas_datatype a_type;
     rocblas_datatype b_type;
@@ -52,9 +54,11 @@ struct Arguments
 
     char transA;
     char transB;
+    char transH;
     char side;
     char uplo;
     char diag;
+    char direct;
 
     rocblas_int batch_count;
 
@@ -64,6 +68,7 @@ struct Arguments
     rocblas_int stride_d; //  stride_d > ldd * N
     rocblas_int stride_x;
     rocblas_int stride_y;
+    rocblas_int stride_p;
 
     rocblas_int norm_check;
     rocblas_int unit_check;
@@ -124,6 +129,8 @@ struct Arguments
         ROCBLAS_FORMAT_CHECK(ldb);
         ROCBLAS_FORMAT_CHECK(ldc);
         ROCBLAS_FORMAT_CHECK(ldd);
+        ROCBLAS_FORMAT_CHECK(ldv);
+        ROCBLAS_FORMAT_CHECK(ldt);
         ROCBLAS_FORMAT_CHECK(a_type);
         ROCBLAS_FORMAT_CHECK(b_type);
         ROCBLAS_FORMAT_CHECK(c_type);
@@ -139,9 +146,11 @@ struct Arguments
         ROCBLAS_FORMAT_CHECK(betai);
         ROCBLAS_FORMAT_CHECK(transA);
         ROCBLAS_FORMAT_CHECK(transB);
+        ROCBLAS_FORMAT_CHECK(transH);
         ROCBLAS_FORMAT_CHECK(side);
         ROCBLAS_FORMAT_CHECK(uplo);
         ROCBLAS_FORMAT_CHECK(diag);
+        ROCBLAS_FORMAT_CHECK(direct);
         ROCBLAS_FORMAT_CHECK(batch_count);
         ROCBLAS_FORMAT_CHECK(stride_a);
         ROCBLAS_FORMAT_CHECK(stride_b);
@@ -149,6 +158,7 @@ struct Arguments
         ROCBLAS_FORMAT_CHECK(stride_d);
         ROCBLAS_FORMAT_CHECK(stride_x);
         ROCBLAS_FORMAT_CHECK(stride_y);
+        ROCBLAS_FORMAT_CHECK(stride_p);
         ROCBLAS_FORMAT_CHECK(norm_check);
         ROCBLAS_FORMAT_CHECK(unit_check);
         ROCBLAS_FORMAT_CHECK(timing);
@@ -265,6 +275,7 @@ private:
         PRINT(compute_type);
         PRINT(transA);
         PRINT(transB);
+        PRINT(transH);
         PRINT(M);
         PRINT(N);
         PRINT(K);
@@ -272,6 +283,8 @@ private:
         PRINT(ldb);
         PRINT(ldc);
         PRINT(ldd);
+        PRINT(ldv);
+        PRINT(ldt);
         PRINT(incx);
         PRINT(incy);
         PRINT(incd);
@@ -283,6 +296,7 @@ private:
         PRINT(side);
         PRINT(uplo);
         PRINT(diag);
+        PRINT(direct);
         PRINT(batch_count);
         PRINT(stride_a);
         PRINT(stride_b);
@@ -290,6 +304,7 @@ private:
         PRINT(stride_d);
         PRINT(stride_x);
         PRINT(stride_y);
+        PRINT(stride_p);
         PRINT(algo);
         PRINT(solution_index);
         PRINT(flags);

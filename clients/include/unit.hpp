@@ -398,4 +398,12 @@ inline void trsm_err_res_check(T max_error, rocblas_int M, T forward_tolerance, 
 #endif
 }
 
+template <typename T>
+inline void err_res_check(T max_error, rocblas_int M, T forward_tolerance, T eps)
+{
+#ifdef GOOGLE_TEST
+    ASSERT_LE(max_error, forward_tolerance * eps * M);
+#endif
+}
+
 #endif

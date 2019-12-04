@@ -36,36 +36,37 @@ if( NOT cblas_FOUND )
   message( FATAL_ERROR "cblas is a required dependency and is not found;  try adding cblas path to CMAKE_PREFIX_PATH" )
 endif( )
 
-if(LINK_BLIS)
-  set( BLIS_CPP ../common/blis_interface.cpp )
-endif()
-
-set( rocblas_benchmark_common
-      ../common/utility.cpp
-      ../common/cblas_interface.cpp
-      ${BLIS_CPP}
-      ../common/rocblas_parse_data.cpp
+set( rocsolver_benchmark_common
+      ../../../clients/common/utility.cpp
+      ../../../clients/common/cblas_interface.cpp
+      ../../../clients/common/rocblas_parse_data.cpp
+#      ../common/norm.cpp
+#      ../common/unit.cpp
+#      ../common/near.cpp
+#      ../common/arg_check.cpp
     )
 
-add_executable( rocblas-bench client.cpp ${rocblas_benchmark_common} )
-target_compile_features( rocblas-bench PRIVATE cxx_static_assert cxx_nullptr cxx_auto_type)
+add_executable( rocsolver-bench client.cpp ${rocsolver_benchmark_common} )
+target_compile_features( rocsolver-bench PRIVATE cxx_static_assert cxx_nullptr cxx_auto_type )
+
 
 if( BUILD_WITH_TENSILE )
-    target_compile_definitions( rocblas-bench PRIVATE BUILD_WITH_TENSILE=1 )
+    target_compile_definitions( rocsolver-bench PRIVATE BUILD_WITH_TENSILE=1 )
 else()
-    target_compile_definitions( rocblas-bench PRIVATE BUILD_WITH_TENSILE=0 )
+    target_compile_definitions( rocsolver-bench PRIVATE BUILD_WITH_TENSILE=0 )
 endif()
 
 # Internal header includes
-target_include_directories( rocblas-bench
+target_include_directories( rocsolver-bench
   PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../library/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../../clients/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../../library/include>
 )
 
-set( BLIS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/build/deps/blis/include/blis )
-set( BLIS_LIBRARY ${CMAKE_SOURCE_DIR}/build/deps/blis/lib/libblis.so )
-
+#set( BLIS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/build/deps/blis/include/blis )
+#set( BLIS_LIBRARY ${CMAKE_SOURCE_DIR}/build/deps/blis/lib/libblis.so )
 
 if( OS_ID_rhel OR OS_ID_centos OR OS_ID_sles)
     if( OS_ID_rhel OR OS_ID_centos)
@@ -86,65 +87,62 @@ if( OS_ID_rhel OR OS_ID_centos OR OS_ID_sles)
         error("cannot find immintrin.h")
     endif()
 
+
     # External header includes included as system files
-    target_include_directories( rocblas-bench
+    target_include_directories( rocsolver-bench
       SYSTEM PRIVATE
         $<BUILD_INTERFACE:${CLANG_INCLUDE_DIR}>
-        $<BUILD_INTERFACE:${BLIS_INCLUDE_DIR}>
+#        $<BUILD_INTERFACE:${BLIS_INCLUDE_DIR}>
         $<BUILD_INTERFACE:${HIP_INCLUDE_DIRS}>
         $<BUILD_INTERFACE:${HCC_INCLUDE_DIRS}>
         $<BUILD_INTERFACE:${Boost_INCLUDE_DIRS}>
         $<BUILD_INTERFACE:${CBLAS_INCLUDE_DIRS}>
         $<BUILD_INTERFACE:${OPENMP_INCLUDE_DIR}>
         )
-    if(LINK_BLIS)
-      target_link_libraries( rocblas-bench PRIVATE ${Boost_LIBRARIES} ${BLIS_LIBRARY} ${OPENMP_LIBRARY} cblas lapack roc::rocblas )
-    else()
-      target_link_libraries( rocblas-bench PRIVATE ${Boost_LIBRARIES} ${OPENMP_LIBRARY} cblas lapack roc::rocblas )
-    endif()
+
+    target_link_libraries( rocsolver-bench PRIVATE ${Boost_LIBRARIES} ${OPENMP_LIBRARY} cblas lapack roc::rocsolver )
 
 else()
     # External header includes included as system files
-    target_include_directories( rocblas-bench
+    target_include_directories( rocsolver-bench
       SYSTEM PRIVATE
         $<BUILD_INTERFACE:${HIP_INCLUDE_DIRS}>
         $<BUILD_INTERFACE:${HCC_INCLUDE_DIRS}>
         $<BUILD_INTERFACE:${Boost_INCLUDE_DIRS}>
         $<BUILD_INTERFACE:${CBLAS_INCLUDE_DIRS}>
-        $<BUILD_INTERFACE:${BLIS_INCLUDE_DIR}>
-    )
-    if(LINK_BLIS)
-      target_link_libraries( rocblas-bench PRIVATE ${Boost_LIBRARIES} ${BLIS_LIBRARY} cblas lapack roc::rocblas )
-    else()
-      target_link_libraries( rocblas-bench PRIVATE ${Boost_LIBRARIES} cblas lapack roc::rocblas )
-    endif()
+#        $<BUILD_INTERFACE:${BLIS_INCLUDE_DIR}>
+        )
 
+    target_link_libraries( rocsolver-bench PRIVATE ${Boost_LIBRARIES} cblas lapack roc::rocsolver )
 endif()
+
+#target_link_libraries( rocsolver-bench PRIVATE /opt/rocm/rocblas/lib/librocblas.so ) #${ROCBLAS_LIBRARY})
+target_link_libraries( rocsolver-bench PRIVATE roc::rocblas ) #${ROCBLAS_LIBRARY})
+
 
 get_target_property( HIPHCC_LOCATION hip::hip_hcc IMPORTED_LOCATION_RELEASE )
 
 if( CUDA_FOUND )
-  target_include_directories( rocblas-bench
+  target_include_directories( rocsolver-bench
     PRIVATE
       $<BUILD_INTERFACE:${CUDA_INCLUDE_DIRS}>
       $<BUILD_INTERFACE:${hip_INCLUDE_DIRS}>
     )
-  target_compile_definitions( rocblas-bench PRIVATE __HIP_PLATFORM_NVCC__ )
-  target_link_libraries( rocblas-bench PRIVATE ${CUDA_LIBRARIES} )
+  target_compile_definitions( rocsolver-bench PRIVATE __HIP_PLATFORM_NVCC__ )
+  target_link_libraries( rocsolver-bench PRIVATE ${CUDA_LIBRARIES} )
 else( )
-  # auto set in hip_common.h
-  #target_compile_definitions( rocblas-bench PRIVATE __HIP_PLATFORM_HCC__ )
-  target_link_libraries( rocblas-bench PRIVATE ${HIPHCC_LOCATION} )
+  #target_compile_definitions( rocsolver-bench PRIVATE __HIP_PLATFORM_HCC__ )
+  target_link_libraries( rocsolver-bench PRIVATE ${HIPHCC_LOCATION} )
 endif( )
 
 if( CMAKE_CXX_COMPILER MATCHES ".*/hcc$" )
   # Remove following when hcc is fixed; hcc emits following spurious warning ROCm v1.6.1
   # "clang-5.0: warning: argument unused during compilation: '-isystem /opt/rocm/include'"
-  target_compile_options( rocblas-bench PRIVATE -Wno-unused-command-line-argument -mf16c )
-  target_include_directories( rocblas-bench PRIVATE /opt/rocm/hsa/include)
+  target_compile_options( rocsolver-bench PRIVATE -Wno-unused-command-line-argument -mf16c )
+  target_include_directories( rocsolver-bench PRIVATE /opt/rocm/hsa/include)
 elseif( CMAKE_COMPILER_IS_GNUCXX OR CXX_VERSION_STRING MATCHES "clang")
   # GCC or hip-clang needs specific flags to turn on f16c intrinsics
-  target_compile_options( rocblas-bench PRIVATE -mf16c )
+  target_compile_options( rocsolver-bench PRIVATE -mf16c )
 endif( )
 
 if( OS_ID_rhel OR OS_ID_centos)
@@ -152,10 +150,5 @@ if( OS_ID_rhel OR OS_ID_centos)
     set(CMAKE_CXX_FLAGS "-isystem ${CLANG_INCLUDE_DIR} -isystem ${XXX_OPENMP_INCLUDE_DIR} ${CMAKE_CXX_FLAGS}")
 endif()
 
-# include order workaround to force /opt/rocm/include later in order to ignore installed rocblas
-set(CMAKE_CXX_FLAGS "-isystem /opt/rocm/include ${CMAKE_CXX_FLAGS}")
-
-set_target_properties( rocblas-bench PROPERTIES CXX_EXTENSIONS NO )
-set_target_properties( rocblas-bench PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/staging" )
-add_dependencies( rocblas-bench rocblas-common )
-add_subdirectory ( ./perf_script )
+set_target_properties( rocsolver-bench PROPERTIES CXX_EXTENSIONS NO )
+set_target_properties( rocsolver-bench PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/staging" )

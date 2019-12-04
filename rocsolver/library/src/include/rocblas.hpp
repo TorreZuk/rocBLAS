@@ -1,0 +1,257 @@
+/* ************************************************************************
+ * Copyright 2016-2019 Advanced Micro Devices, Inc.
+ * ************************************************************************ */
+
+#pragma once
+#ifndef _ROCBLAS_HPP_
+#define _ROCBLAS_HPP_
+
+#include <rocblas.h>
+
+template <typename T>
+rocblas_status
+    rocblas_scal(rocblas_handle handle, rocblas_int n, const T* alpha, T* x, rocblas_int incx);
+
+template <typename T>
+rocblas_status rocblas_copy(
+    rocblas_handle handle, rocblas_int n, const T* x, rocblas_int incx, T* y, rocblas_int incy);
+
+template <typename T>
+rocblas_status rocblas_swap(
+    rocblas_handle handle, rocblas_int n, T* x, rocblas_int incx, T* y, rocblas_int incy);
+
+template <typename T>
+rocblas_status rocblas_dot(rocblas_handle handle,
+                           rocblas_int    n,
+                           const T*       x,
+                           rocblas_int    incx,
+                           const T*       y,
+                           rocblas_int    incy,
+                           T*             result);
+
+template <typename T1, typename T2>
+rocblas_status
+    rocblas_asum(rocblas_handle handle, rocblas_int n, const T1* x, rocblas_int incx, T2* result);
+
+template <typename T1, typename T2>
+rocblas_status
+    rocblas_nrm2(rocblas_handle handle, rocblas_int n, const T1* x, rocblas_int incx, T2* result);
+
+template <typename T>
+rocblas_status rocblas_iamax(
+    rocblas_handle handle, rocblas_int n, const T* x, rocblas_int incx, rocblas_int* result);
+
+template <typename T>
+rocblas_status rocblas_iamin(
+    rocblas_handle handle, rocblas_int n, const T* x, rocblas_int incx, rocblas_int* result);
+
+template <typename T>
+rocblas_status rocblas_axpy(rocblas_handle handle,
+                            rocblas_int    n,
+                            const T*       alpha,
+                            const T*       x,
+                            rocblas_int    incx,
+                            T*             y,
+                            rocblas_int    incy);
+
+template <typename T>
+rocblas_status rocblas_ger(rocblas_handle handle,
+                           rocblas_int    m,
+                           rocblas_int    n,
+                           const T*       alpha,
+                           const T*       x,
+                           rocblas_int    incx,
+                           const T*       y,
+                           rocblas_int    incy,
+                           T*             A,
+                           rocblas_int    lda);
+
+template <typename T>
+rocblas_status rocblas_syr(rocblas_handle handle,
+                           rocblas_fill   uplo,
+                           rocblas_int    n,
+                           const T*       alpha,
+                           const T*       x,
+                           rocblas_int    incx,
+                           T*             A,
+                           rocblas_int    lda);
+
+template <typename T>
+rocblas_status rocblas_gemv(rocblas_handle    handle,
+                            rocblas_operation transA,
+                            rocblas_int       m,
+                            rocblas_int       n,
+                            const T*          alpha,
+                            const T*          A,
+                            rocblas_int       lda,
+                            const T*          x,
+                            rocblas_int       incx,
+                            const T*          beta,
+                            T*                y,
+                            rocblas_int       incy);
+
+template <typename T>
+rocblas_status rocblas_symv(rocblas_handle handle,
+                            rocblas_fill   uplo,
+                            rocblas_int    n,
+                            const T*       alpha,
+                            const T*       A,
+                            rocblas_int    lda,
+                            const T*       x,
+                            rocblas_int    incx,
+                            const T*       beta,
+                            T*             y,
+                            rocblas_int    incy);
+
+template <typename T>
+rocblas_status rocblas_geam(rocblas_handle    handle,
+                            rocblas_operation transA,
+                            rocblas_operation transB,
+                            rocblas_int       m,
+                            rocblas_int       n,
+                            const T*          alpha,
+                            const T*          A,
+                            rocblas_int       lda,
+                            const T*          beta,
+                            const T*          B,
+                            rocblas_int       ldb,
+                            T*                C,
+                            rocblas_int       ldc);
+
+template <typename T>
+rocblas_status rocblas_gemm(rocblas_handle    handle,
+                            rocblas_operation transA,
+                            rocblas_operation transB,
+                            rocblas_int       m,
+                            rocblas_int       n,
+                            rocblas_int       k,
+                            const T*          alpha,
+                            const T*          A,
+                            rocblas_int       lda,
+                            const T*          B,
+                            rocblas_int       ldb,
+                            const T*          beta,
+                            T*                C,
+                            rocblas_int       ldc);
+
+template <typename T>
+rocblas_status rocblas_gemm_strided_batched(rocblas_handle    handle,
+                                            rocblas_operation transA,
+                                            rocblas_operation transB,
+                                            rocblas_int       m,
+                                            rocblas_int       n,
+                                            rocblas_int       k,
+                                            const T*          alpha,
+                                            const T*          A,
+                                            rocblas_int       lda,
+                                            rocblas_int       bsa,
+                                            const T*          B,
+                                            rocblas_int       ldb,
+                                            rocblas_int       bsb,
+                                            const T*          beta,
+                                            T*                C,
+                                            rocblas_int       ldc,
+                                            rocblas_int       bsc,
+                                            rocblas_int       batch_count);
+
+template <typename T>
+rocblas_status rocblas_gemm_kernel_name(rocblas_handle    handle,
+                                        rocblas_operation transA,
+                                        rocblas_operation transB,
+                                        rocblas_int       m,
+                                        rocblas_int       n,
+                                        rocblas_int       k,
+                                        const T*          alpha,
+                                        const T*          A,
+                                        rocblas_int       lda,
+                                        rocblas_int       bsa,
+                                        const T*          B,
+                                        rocblas_int       ldb,
+                                        rocblas_int       bsb,
+                                        const T*          beta,
+                                        T*                C,
+                                        rocblas_int       ldc,
+                                        rocblas_int       bsc,
+                                        rocblas_int       batch_count);
+
+template <typename T>
+rocblas_status rocblas_gemm_strided_batched_kernel_name(rocblas_handle    handle,
+                                                        rocblas_operation transA,
+                                                        rocblas_operation transB,
+                                                        rocblas_int       m,
+                                                        rocblas_int       n,
+                                                        rocblas_int       k,
+                                                        const T*          alpha,
+                                                        const T*          A,
+                                                        rocblas_int       lda,
+                                                        rocblas_int       bsa,
+                                                        const T*          B,
+                                                        rocblas_int       ldb,
+                                                        rocblas_int       bsb,
+                                                        const T*          beta,
+                                                        T*                C,
+                                                        rocblas_int       ldc,
+                                                        rocblas_int       bsc,
+                                                        rocblas_int       batch_count);
+
+template <typename T>
+rocblas_status rocblas_trsm(rocblas_handle    handle,
+                            rocblas_side      side,
+                            rocblas_fill      uplo,
+                            rocblas_operation transA,
+                            rocblas_diagonal  diag,
+                            rocblas_int       m,
+                            rocblas_int       n,
+                            const T*          alpha,
+                            T*                A,
+                            rocblas_int       lda,
+                            T*                B,
+                            rocblas_int       ldb);
+
+template <typename T>
+rocblas_status rocblas_trtri(rocblas_handle   handle,
+                             rocblas_fill     uplo,
+                             rocblas_diagonal diag,
+                             rocblas_int      n,
+                             T*               A,
+                             rocblas_int      lda,
+                             T*               invA,
+                             rocblas_int      ldinvA);
+
+template <typename T>
+rocblas_status rocblas_trtri_batched(rocblas_handle   handle,
+                                     rocblas_fill     uplo,
+                                     rocblas_diagonal diag,
+                                     rocblas_int      n,
+                                     T*               A,
+                                     rocblas_int      lda,
+                                     rocblas_int      bsa,
+                                     T*               invA,
+                                     rocblas_int      ldinvA,
+                                     rocblas_int      bsinvA,
+                                     rocblas_int      batch_count);
+
+template <typename T, rocblas_int NB>
+rocblas_status rocblas_trtri_trsm(rocblas_handle   handle,
+                                  rocblas_fill     uplo,
+                                  rocblas_diagonal diag,
+                                  rocblas_int      n,
+                                  T*               A,
+                                  rocblas_int      lda,
+                                  T*               invA);
+
+template <typename T>
+rocblas_status rocblas_trmm(rocblas_handle    handle,
+                            rocblas_side      side,
+                            rocblas_fill      uplo,
+                            rocblas_operation trans,
+                            rocblas_diagonal  diag,
+                            rocblas_int       m,
+                            rocblas_int       n,
+                            T*                alpha,
+                            T*                A,
+                            rocblas_int       lda,
+                            T*                B,
+                            rocblas_int       ldb);
+
+#endif // _ROCBLAS_HPP_
