@@ -1,6 +1,7 @@
 #ifndef COMMON_DEVICE_H
 #define COMMON_DEVICE_H
 
+#include "rocblas.h"
 #include <hip/hip_runtime.h>
 
 template <typename T, typename U>
