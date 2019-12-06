@@ -15,7 +15,7 @@ rocBLASCI:
 
     def rocblas = new rocProject('rocBLAS', 'Extended')
     // customize for project
-    rocblas.paths.build_command = './install.sh -lasm_ci -c'
+    rocblas.paths.build_command = './install.sh -lasm_ci -rc'
 
     // Define test architectures, optional rocm version argument is available
     def nodes = new dockerNodes(['ubuntu && gfx900', 'centos7 && gfx900', 'centos7 && gfx906', 'sles && gfx906'], rocblas)
@@ -35,7 +35,8 @@ rocBLASCI:
         platform, project->
 
         def gfilter = "*nightly*"
-        commonGroovy.runTestCommand(platform, project, gfilter)
+        def gfilter2 = "*daily_lapack*"
+        commonGroovy.runTestCommand(platform, project, gfilter, gfilter2)
     }
 
     def packageCommand =
