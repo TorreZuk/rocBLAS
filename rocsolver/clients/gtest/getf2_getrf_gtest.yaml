@@ -13,14 +13,14 @@ Definitions:
 
 Tests:
 - name: getf2_small
-  category: quick
+  category: checkin_lapack
   function: getf2
   precision: *single_double_precisions
   matrix_size: *small_matrix_size_range
   n_size: *n_size_range
 
 - name: getf2_large
-  category: nightly
+  category: daily_lapack
   function: getf2
   precision: *single_double_precisions
   matrix_size: *large_matrix_size_range
