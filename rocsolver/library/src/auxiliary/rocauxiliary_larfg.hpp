@@ -11,6 +11,7 @@
 
 #include "common_device.hpp"
 #include "ideal_sizes.hpp"
+#include "rocblas-exported-proto.hpp"
 #include "rocblas.hpp"
 #include "rocsolver.h"
 #include "utility.h"
@@ -118,11 +119,13 @@ rocblas_status rocsolver_larfg_template(rocblas_handle    handle,
                        stridex);
 
     //compute vector v=x*norms
-    for(int b = 0; b < batch_count; ++b)
-    {
-        xp = load_ptr_batch<T>(xx, b, shiftx, stridex);
-        rocblas_scal(handle, n - 1, (norms + b), xp, incx);
-    }
+    rocblas_scal_template<256, T>(handle, n - 1, norms, 1, x, shiftx, incx, stridex, batch_count);
+
+    //for(int b = 0; b < batch_count; ++b)
+    //{
+    //    xp = load_ptr_batch<T>(xx, b, shiftx, stridex);
+    //    rocblas_scal(handle, n - 1, (norms + b), xp, incx);
+    //}
 
     hipFree(norms);
 
