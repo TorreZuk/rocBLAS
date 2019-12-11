@@ -139,6 +139,9 @@ set( rocblas_blas2_source
   blas2/rocblas_syr_batched.cpp
   blas2/rocblas_syr_strided_batched.cpp
   blas2/rocblas_tbmv.cpp
+  blas2/rocblas_symv.cpp
+  blas2/rocblas_symv_batched.cpp
+  blas2/rocblas_symv_strided_batched.cpp
 )
 
 set( rocblas_auxiliary_source

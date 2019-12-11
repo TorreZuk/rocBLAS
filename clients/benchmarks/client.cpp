@@ -47,6 +47,9 @@
 #include "testing_gemv_batched.hpp"
 #include "testing_gemv_strided_batched.hpp"
 #include "testing_ger.hpp"
+#include "testing_symv.hpp"
+#include "testing_symv_batched.hpp"
+#include "testing_symv_strided_batched.hpp"
 #include "testing_syr.hpp"
 #include "testing_tbmv.hpp"
 #include "testing_trmv.hpp"
@@ -212,6 +215,9 @@ struct perf_blas<
                 {"ger", testing_ger<T>},
                 {"syr", testing_syr<T>},
                 {"tbmv", testing_tbmv<T>},
+                {"symv", testing_symv<T>},
+                {"symv_batched", testing_symv_batched<T>},
+                {"symv_strided_batched", testing_symv_strided_batched<T>},
 #if BUILD_WITH_TENSILE
                 {"geam", testing_geam<T>},
                 {"trmm", testing_trmm<T>},

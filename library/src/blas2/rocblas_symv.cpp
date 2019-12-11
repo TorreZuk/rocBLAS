@@ -1,12 +1,12 @@
 /* ************************************************************************
  * Copyright 2016-2019 Advanced Micro Devices, Inc.
  * ************************************************************************ */
-#include "rocblas_symv.hpp"
-#include "handle.h"
+#define HIP_ENABLE_PRINTF
+#include <hip/hip_runtime.h>
+
 #include "logging.h"
-#include "rocblas.h"
+#include "rocblas_symv.hpp"
 #include "utility.h"
-#include <limits>
 
 namespace
 {
@@ -16,18 +16,22 @@ namespace
     constexpr char rocblas_symv_name<float>[] = "rocblas_ssymv";
     template <>
     constexpr char rocblas_symv_name<double>[] = "rocblas_dsymv";
+    template <>
+    constexpr char rocblas_symv_name<rocblas_float_complex>[] = "rocblas_csymv";
+    template <>
+    constexpr char rocblas_symv_name<rocblas_double_complex>[] = "rocblas_zsymv";
 
-    template <typename T>
+    template <typename T, typename U, typename V, typename W>
     rocblas_status rocblas_symv_impl(rocblas_handle handle,
                                      rocblas_fill   uplo,
                                      rocblas_int    n,
-                                     const T*       alpha,
-                                     const T*       A,
+                                     const V*       alpha,
+                                     const U*       A,
                                      rocblas_int    lda,
-                                     const T*       x,
+                                     const U*       x,
                                      rocblas_int    incx,
-                                     const T*       beta,
-                                     T*             y,
+                                     const V*       beta,
+                                     W*             y,
                                      rocblas_int    incy)
     {
         if(!handle)
@@ -108,6 +112,9 @@ namespace
                             incy);
         }
 
+        if(uplo != rocblas_fill_lower && uplo != rocblas_fill_upper)
+            return rocblas_status_invalid_size;
+
         if(n < 0 || lda < n || lda < 1 || !incx || !incy)
             return rocblas_status_invalid_size;
 
@@ -116,6 +123,8 @@ namespace
 
         if(!A || !x || !y || !alpha || !beta)
             return rocblas_status_invalid_pointer;
+
+        setenv("HCC_ENABLE_PRINTF", "1", 1);
 
         return rocblas_symv_template<T>(
             handle, uplo, n, alpha, 0, A, 0, lda, 0, x, 0, incx, 0, beta, 0, y, 0, incy, 0, 1);
@@ -131,34 +140,36 @@ namespace
 
 extern "C" {
 
-rocblas_status rocblas_ssymv(rocblas_handle handle,
-                             rocblas_fill   uplo,
-                             rocblas_int    n,
-                             const float*   alpha,
-                             const float*   A,
-                             rocblas_int    lda,
-                             const float*   x,
-                             rocblas_int    incx,
-                             const float*   beta,
-                             float*         y,
-                             rocblas_int    incy)
-{
-    return rocblas_symv_impl(handle, transA, m, n, alpha, A, lda, x, incx, beta, y, incy);
-}
+#ifdef IMPL
+#error IMPL ALREADY DEFINED
+#endif
 
-rocblas_status rocblas_dsymv(rocblas_handle handle,
-                             rocblas_fill   uplo,
-                             rocblas_int    n,
-                             const double*  alpha,
-                             const double*  A,
-                             rocblas_int    lda,
-                             const double*  x,
-                             rocblas_int    incx,
-                             const double*  beta,
-                             double*        y,
-                             rocblas_int    incy)
-{
-    return rocblas_symv_impl(handle, transA, m, n, alpha, A, lda, x, incx, beta, y, incy);
-}
+#define IMPL(routine_name_, T_)                                                               \
+    rocblas_status routine_name_(rocblas_handle handle,                                       \
+                                 rocblas_fill   uplo,                                         \
+                                 rocblas_int    n,                                            \
+                                 const T_*      alpha,                                        \
+                                 const T_*      A,                                            \
+                                 rocblas_int    lda,                                          \
+                                 const T_*      x,                                            \
+                                 rocblas_int    incx,                                         \
+                                 const T_*      beta,                                         \
+                                 T_*            y,                                            \
+                                 rocblas_int    incy)                                         \
+    try                                                                                       \
+    {                                                                                         \
+        return rocblas_symv_impl<T_>(handle, uplo, n, alpha, A, lda, x, incx, beta, y, incy); \
+    }                                                                                         \
+    catch(...)                                                                                \
+    {                                                                                         \
+        return exception_to_rocblas_status();                                                 \
+    }
+
+IMPL(rocblas_ssymv, float);
+IMPL(rocblas_dsymv, double);
+IMPL(rocblas_csymv, rocblas_float_complex);
+IMPL(rocblas_zsymv, rocblas_double_complex);
+
+#undef IMPL
 
 } // extern "C"

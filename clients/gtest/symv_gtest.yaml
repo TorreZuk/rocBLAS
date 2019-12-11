@@ -6,6 +6,7 @@ Definitions:
   - &medium_matrix_size_range
     - { N:    -1, lda:   -1 }
     - { N:    10, lda:    2 }
+    - { N:     3, lda:    3 }
     - { N:   500, lda:  500 }
 
   - &large_matrix_size_range
@@ -18,7 +19,7 @@ Definitions:
     - { incx:   1, incy:   1 }
     - { incx:   0, incy:  -1 }
     - { incx:   2, incy:   1 }
-    - { incx:  10, incy: 100 }
+    - { incx:  -1, incy:  -1 }
 
   - &alpha_beta_range
     - { alpha:  1.0, beta:  0.0 }
@@ -27,10 +28,16 @@ Definitions:
     - { alpha:  0.0, beta:  1.0 }
 
 Tests:
+- name: symv_bad
+  category: pre_checkin
+  function: symv_bad_arg
+  precision: *single_precision
+  uplo: [ U, L, X ]
+
 - name: symv_medium
   category: pre_checkin
   function: symv
-  precision: *single_double_precisions
+  precision: *single_double_precisions_complex_real
   uplo: [ U, L ]
   matrix_size: *medium_matrix_size_range
   incx_incy: *incx_incy_range
@@ -39,9 +46,52 @@ Tests:
 - name: symv_large
   category: nightly
   function: symv
-  precision: *single_double_precisions
+  precision: *single_double_precisions_complex_real
   uplo: [ U, L ]
   matrix_size: *large_matrix_size_range
   incx_incy: *incx_incy_range
   alpha_beta: *alpha_beta_range
+
+  # batched
+- name: symv_batched_medium
+  category: pre_checkin
+  function: symv_batched
+  precision: *single_double_precisions_complex_real
+  uplo: [ U, L ]
+  matrix_size: *medium_matrix_size_range
+  incx_incy: *incx_incy_range
+  alpha_beta: *alpha_beta_range
+  batch_count: [ -1, 1, 3 ]
+
+- name: symv_batched_large
+  category: nightly
+  function: symv_batched
+  precision: *single_double_precisions_complex_real
+  uplo: [ U, L ]
+  matrix_size: *large_matrix_size_range
+  incx_incy: *incx_incy_range
+  alpha_beta: *alpha_beta_range
+  batch_count: [ -1, 1, 3 ]
+
+  # strided batched
+- name: symv_strided_batched_medium
+  category: pre_checkin
+  function: symv_strided_batched
+  precision: *single_double_precisions_complex_real
+  uplo: [ U, L ]
+  matrix_size: *medium_matrix_size_range
+  incx_incy: *incx_incy_range
+  alpha_beta: *alpha_beta_range
+  batch_count: [ -1, 1, 3 ]
+
+- name: symv_strided_batched_large
+  category: nightly
+  function: symv_strided_batched
+  precision: *single_double_precisions_complex_real
+  uplo: [ U, L ]
+  matrix_size: *large_matrix_size_range
+  incx_incy: *incx_incy_range
+  alpha_beta: *alpha_beta_range
+  batch_count: [  -1, 1, 3 ]
+
 ...
