@@ -2,17 +2,17 @@
 
 # This script needs to be edited to bump new master version to new develop for new release.
 # - run this script after running bump_master_version.sh and merging develop into master
-# - run this script in master branch 
-# - after running this script merge master into develop 
+# - run this script in master branch
+# - after running this script merge master into develop
 
-OLD_ROCBLAS_VERSION="2.12.0"
-NEW_ROCBLAS_VERSION="2.13.0"
+OLD_ROCBLAS_VERSION="2.12.2"
+NEW_ROCBLAS_VERSION="2.13.1"
 
 OLD_TENSILE_VERSION="Tensile 4.14.0"
 NEW_TENSILE_VERSION="Tensile 4.14.0"
 
-OLD_TENSILE_HASH="78e72fbb35c3fba688deab3895f70f2f39f537af"
-NEW_TENSILE_HASH="78e72fbb35c3fba688deab3895f70f2f39f537af"
+OLD_TENSILE_HASH="ec5815a1285606541c264f7fb97a4995f524b999"
+NEW_TENSILE_HASH="ec5815a1285606541c264f7fb97a4995f524b999"
 
 sed -i "s/${OLD_ROCBLAS_VERSION}/${NEW_ROCBLAS_VERSION}/g" CMakeLists.txt
 sed -i "s/${OLD_TENSILE_VERSION}/${NEW_TENSILE_VERSION}/g" CMakeLists.txt

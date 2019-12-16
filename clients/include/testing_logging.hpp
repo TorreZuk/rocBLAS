@@ -167,7 +167,11 @@ void testing_logging()
 
         rocblas_syr<T>(handle, uplo, n, &alpha, dx, incx, da, lda);
 
+        rocblas_symv<T>(handle, uplo, n, &alpha, da, lda, dx, incx, &beta, dy, incy);
+
         rocblas_gemv<T>(handle, transA, m, n, &alpha, da, lda, dx, incx, &beta, dy, incy);
+
+        rocblas_trmv<T>(handle, uplo, transA, diag, m, da, lda, dx, incx);
 
         if(BUILD_WITH_TENSILE)
         {
@@ -469,6 +473,13 @@ void testing_logging()
                    << (void*)&alpha << "," << (void*)da << "," << lda << "," << (void*)dx << ","
                    << incx << "," << (void*)&beta << "," << (void*)dy << "," << incy << '\n';
     }
+
+    trace_ofs2 << replaceX<T>("rocblas_Xtrmv") << "," << uplo << "," << transA << "," << diag << ","
+               << m << "," << (void*)da << "," << lda << "," << (void*)dx << "," << incx << '\n';
+
+    bench_ofs2 << "./rocblas-bench -f trmv -r " << rocblas_precision_string<T> << " --uplo "
+               << uplo_letter << " --transposeA " << transA_letter << " --diag " << diag_letter
+               << " -m " << m << " --lda " << lda << " --incx " << incx << '\n';
 
     // BLAS3
 
