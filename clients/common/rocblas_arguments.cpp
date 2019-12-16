@@ -30,9 +30,8 @@ void ArgumentModel::log_perf(std::stringstream& name_line,
                              std::stringstream& val_line,
                              const Arguments&   arg,
                              double             gpu_us,
-                             double             gpu_flops,
+                             double             gflops,
                              double             gpu_bytes,
-                             double             cpu_flops,
                              double             cpu_us,
                              double             norm1,
                              double             norm2)
@@ -41,10 +40,10 @@ void ArgumentModel::log_perf(std::stringstream& name_line,
     int hot_calls   = arg.iters < 1 ? 1 : arg.iters;
 
     // per/us to per/sec *10^6
-    double rocblas_gflops = gpu_flops * batch_count * hot_calls / gpu_us * 1e6;
-    double cblas_gflops   = cpu_flops / cpu_us * 1e6;
+    double rocblas_gflops = gflops * batch_count * hot_calls / gpu_us * 1e6;
+    double cblas_gflops   = gflops * batch_count / cpu_us * 1e6;
 
-    // bytes/us to GB/s = 10^6 * 10^-9
+    // bytes/us to GB/s = 10^6 * 10^-9 = /10^3
     double rocblas_GBps = gpu_bytes * batch_count / gpu_us / 1e3;
 
     name_line << "rocblas-Gflops,rocblas-GB/s,rocblas-us,";
