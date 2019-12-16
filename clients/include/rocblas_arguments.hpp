@@ -15,6 +15,7 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <type_traits>
 
 /* ============================================================================================
@@ -23,8 +24,9 @@
 /* WARNING: If this data is changed, then rocblas_common.yaml must also be
  * changed. */
 
-struct Arguments
+class Arguments
 {
+public:
     rocblas_int M;
     rocblas_int N;
     rocblas_int K;
@@ -205,6 +207,12 @@ private:
         str << x;
     }
 
+    // Float16 output
+    static void print_value(std::ostream& str, rocblas_half x)
+    {
+        str << float(x);
+    }
+
     // Floating-point output
     static void print_value(std::ostream& str, double x)
     {
@@ -304,6 +312,8 @@ private:
 #undef PRINT
         return str << " }\n";
     }
+
+    friend class ArgumentModel;
 };
 
 static_assert(std::is_standard_layout<Arguments>{},
@@ -313,5 +323,171 @@ static_assert(std::is_standard_layout<Arguments>{},
 static_assert(std::is_trivial<Arguments>{},
               "Arguments is not a trivial type, and thus is "
               "incompatible with C.");
+
+const char* const c_tok_alpha       = "alpha";
+const char* const c_tok_beta        = "beta";
+const char* const c_tok_transA      = "transA";
+const char* const c_tok_transB      = "transB";
+const char* const c_tok_M           = "M";
+const char* const c_tok_N           = "N";
+const char* const c_tok_K           = "K";
+const char* const c_tok_lda         = "lda";
+const char* const c_tok_ldb         = "ldb";
+const char* const c_tok_ldc         = "ldc";
+const char* const c_tok_incx        = "incx";
+const char* const c_tok_incy        = "incy";
+const char* const c_tok_batch_count = "batch_count";
+
+enum arg_type
+{
+    e_alpha,
+    e_beta,
+    e_transA,
+    e_transB,
+    e_M,
+    e_N,
+    e_K,
+    e_lda,
+    e_ldb,
+    e_ldc,
+    e_incx,
+    e_incy,
+    e_batch_count,
+};
+
+class ArgumentModel
+{
+public:
+    ArgumentModel(const std::vector<arg_type>& params);
+    virtual ~ArgumentModel() {}
+
+    bool hasParam(arg_type a);
+
+    template <typename T>
+    void log_args(std::ostream&    str,
+                  const Arguments& args,
+                  double           gpu_us,
+                  double           gpu_flops,
+                  double           gpu_bytes = 0,
+                  double           cpu_flops = 0,
+                  double           cpu_us    = 0,
+                  double           norm1     = 0,
+                  double           norm2     = 0);
+
+    virtual void log_perf(std::stringstream& name_str,
+                          std::stringstream& val_str,
+                          const Arguments&   arg,
+                          double             gpu_us,
+                          double             gpu_flops,
+                          double             gpu_bytes,
+                          double             cpu_flops,
+                          double             cpu_us,
+                          double             norm1,
+                          double             norm2);
+
+protected:
+    std::vector<arg_type> m_args;
+};
+
+template <typename T>
+void ArgumentModel::log_args(std::ostream&    str,
+                             const Arguments& arg,
+                             double           gpu_us,
+                             double           gpu_flops,
+                             double           gpu_bytes,
+                             double           cpu_flops,
+                             double           cpu_us,
+                             double           norm1,
+                             double           norm2)
+{
+    std::stringstream name_list;
+    std::stringstream value_list;
+    const char        delim = ',';
+
+    auto print = [&](const char* name, auto x) mutable {
+        name_list << name << delim;
+        Arguments::print_value(value_list, x);
+        value_list << delim;
+    };
+
+#define PRINT(n)                 \
+    {                            \
+        print(c_tok_##n, arg.n); \
+    }
+
+    for(auto&& i : m_args)
+    {
+        switch(i)
+        {
+        case e_alpha:
+        {
+            T a = arg.get_alpha<T>();
+            print(c_tok_alpha, a);
+        }
+        break;
+        case e_beta:
+        {
+            T b = arg.get_beta<T>();
+            print(c_tok_beta, b);
+        }
+        break;
+        case e_transA:
+            PRINT(transA);
+            break;
+        case e_transB:
+            PRINT(transB);
+            break;
+        case e_M:
+            PRINT(M);
+            break;
+        case e_N:
+            PRINT(N);
+            break;
+        case e_K:
+            PRINT(K);
+            break;
+        case e_lda:
+            PRINT(lda);
+            break;
+        case e_ldb:
+            PRINT(ldb);
+            break;
+        case e_ldc:
+            PRINT(ldc);
+            break;
+        case e_incx:
+            PRINT(incx);
+            break;
+        case e_incy:
+            PRINT(incy);
+            break;
+        default:
+        {
+            name_list << "unknown,";
+            value_list << "unknown,";
+        }
+        break;
+        }
+    }
+
+#undef PRINT
+
+    if(arg.timing)
+    {
+        log_perf(name_list,
+                 value_list,
+                 arg,
+                 gpu_us,
+                 gpu_flops,
+                 gpu_bytes,
+                 cpu_flops,
+                 cpu_us,
+                 norm1,
+                 norm2);
+    }
+
+    str << name_list.str() << std::endl;
+    str << value_list.str() << std::endl;
+}
 
 #endif

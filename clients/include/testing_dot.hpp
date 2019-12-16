@@ -60,6 +60,8 @@ void testing_dotc_bad_arg(const Arguments& arg)
 template <typename T, bool CONJ = false>
 void testing_dot(const Arguments& arg)
 {
+    static ArgumentModel testing_dot_arg_model(std::vector<arg_type>({e_N, e_incx, e_incy}));
+
     rocblas_int N    = arg.N;
     rocblas_int incx = arg.incx;
     rocblas_int incy = arg.incy;
@@ -184,6 +186,12 @@ void testing_dot(const Arguments& arg)
         gpu_time_used     = (get_time_us() - gpu_time_used) / number_hot_calls;
         rocblas_gflops    = dot_gflop_count<CONJ, T>(N) / gpu_time_used * 1e6 * 1;
         rocblas_bandwidth = (2.0 * N) * sizeof(T) / gpu_time_used / 1e3;
+
+        testing_dot_arg_model.log_args<T>(std::cout,
+                                          arg,
+                                          get_time_us() - gpu_time_used,
+                                          dot_gflop_count<CONJ, T>(N),
+                                          (2.0 * N) * sizeof(T));
 
         std::cout << "N,incx,incy,rocblas-Gflops,rocblas-GB/s,rocblas-us";
 
