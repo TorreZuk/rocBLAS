@@ -51,6 +51,8 @@
 #include "testing_symv_batched.hpp"
 #include "testing_symv_strided_batched.hpp"
 #include "testing_syr.hpp"
+#include "testing_syr_batched.hpp"
+#include "testing_syr_strided_batched.hpp"
 #include "testing_tbmv.hpp"
 #include "testing_tbmv_batched.hpp"
 #include "testing_tbmv_strided_batched.hpp"
@@ -216,6 +218,8 @@ struct perf_blas<
                 {"trmv_strided_batched", testing_trmv_strided_batched<T>},
                 {"ger", testing_ger<T>},
                 {"syr", testing_syr<T>},
+                {"syr_batched", testing_syr_batched<T>},
+                {"syr_strided_batched", testing_syr_strided_batched<T>},
                 {"tbmv", testing_tbmv<T>},
                 {"tbmv_batched", testing_tbmv_batched<T>},
                 {"tbmv_strided_batched", testing_tbmv_strided_batched<T>},
@@ -306,6 +310,9 @@ struct perf_blas<T,
                 {"iamax", testing_iamax<T>},
                 {"iamin", testing_iamin<T>},
                 {"gemv", testing_gemv<T>},
+                {"symv", testing_symv<T>},
+                {"symv_batched", testing_symv_batched<T>},
+                {"symv_strided_batched", testing_symv_strided_batched<T>},
                 {"trmv", testing_trmv<T>},
                 {"trmv_batched", testing_trmv_batched<T>},
                 {"trmv_strided_batched", testing_trmv_strided_batched<T>},
