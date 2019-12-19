@@ -1,66 +1,81 @@
 /* ************************************************************************
  * Copyright 2019 Advanced Micro Devices, Inc.
  * ************************************************************************ */
-#ifndef __ROCBLAS_SPMV_HPP__
-#define __ROCBLAS_SPMV_HPP__
+#pragma once
+
 #include "handle.h"
 #include "rocblas.h"
 
-template <typename T, typename U, typename W>
+template <typename T, typename U, typename V, typename W>
 __global__ void rocblas_spmv_kernel(rocblas_fill   uplo,
                                     rocblas_int    n,
                                     V              alpha_device_host,
                                     rocblas_stride stride_alpha,
                                     const U __restrict__ Aa,
-                                    rocblas_int strideA,
+                                    rocblas_int    shiftA,
+                                    rocblas_stride strideA,
                                     const U __restrict__ xa,
                                     ptrdiff_t      shiftx,
                                     rocblas_int    incx,
-                                    rocblas_int    stridex,
+                                    rocblas_stride stridex,
                                     V              beta_device_host,
                                     rocblas_stride stride_beta,
-                                    U              ya,
+                                    W              ya,
                                     ptrdiff_t      shifty,
                                     rocblas_int    incy,
-                                    rocblas_int    stridey)
+                                    rocblas_stride stridey)
 {
     ptrdiff_t tx = hipBlockIdx_x * hipBlockDim_x + hipThreadIdx_x;
 
     if(tx < n)
     {
-        auto alpha              = load_scalar(alpha_device_host, hipBlockIdx_z, stride_alpha);
-        auto beta               = load_scalar(beta_device_host, hipBlockIdx_z, stride_beta);
-        const T* __restrict__ A = load_ptr_batch(Aa, hipBlockIdx_z, 0, strideA);
-        const T* __restrict__ x = load_ptr_batch(xa, hipBlockIdx_z, shiftx, stridex);
-        T* y                    = load_ptr_batch(ya, hipBlockIdx_z, shifty, stridey);
+        auto alpha              = load_scalar(alpha_device_host, hipBlockIdx_y, stride_alpha);
+        auto beta               = load_scalar(beta_device_host, hipBlockIdx_y, stride_beta);
+        const T* __restrict__ A = load_ptr_batch(Aa, hipBlockIdx_y, shiftA, strideA);
+        const T* __restrict__ x = load_ptr_batch(xa, hipBlockIdx_y, shiftx, stridex);
+        T* y                    = load_ptr_batch(ya, hipBlockIdx_y, shifty, stridey);
 
-        T dot = 0.0;
-        for(int i = 0; i < n; i++)
+        T dotp = 0;
+
+        int from = uplo == rocblas_fill_upper ? tx : 0;
+        int to   = uplo == rocblas_fill_upper ? n - 1 : tx - 1;
+        for(int j = from; j <= to; j++)
         {
-            // TODO decode packing
-            if(uplo == rocblas_fill_lower ? i <= tx : i >= tx)
-                dot += x[i] * A[i * lda + tx];
+            int idx = (uplo == rocblas_fill_lower) ? tx + (2 * n - (j + 1)) * (j) / 2
+                                                   : tx + (j + 1) * (j) / 2;
+            dotp += x[j * incx] * A[idx];
         }
 
-        y[tx] = beta * y[tx] + alpha * dot;
+        from = uplo == rocblas_fill_upper ? 0 : tx;
+        to   = uplo == rocblas_fill_upper ? tx - 1 : n - 1;
+        for(int j = from; j <= to; j++)
+        {
+            // transpose A fetch for opposite side of triangle
+            int idx = (uplo == rocblas_fill_lower) ? j + (2 * n - (tx + 1)) * (tx) / 2
+                                                   : j + (tx + 1) * (tx) / 2;
+            dotp += x[j * incx] * A[idx];
+        }
+
+        y[tx * incy] = dotp * alpha + beta * y[tx * incy];
     }
 }
 
-template <typename U, typename V>
+template <typename T, typename U, typename V, typename W>
 rocblas_status rocblas_spmv_template(rocblas_handle handle,
                                      rocblas_fill   uplo,
                                      rocblas_int    n,
-                                     const U*       alpha,
+                                     const V*       alpha,
                                      rocblas_stride stride_alpha,
-                                     const V*       A,
+                                     const U*       A,
+                                     rocblas_int    offseta,
                                      rocblas_stride strideA,
-                                     const V*       x,
+                                     const U*       x,
                                      rocblas_int    offsetx,
                                      rocblas_int    incx,
                                      rocblas_stride stridex,
-                                     const U*       beta,
+                                     const V*       beta,
                                      rocblas_stride stride_beta,
-                                     V*             y,
+                                     W*             y,
                                      rocblas_int    offsety,
                                      rocblas_int    incy,
                                      rocblas_stride stridey,
@@ -76,17 +91,16 @@ rocblas_status rocblas_spmv_template(rocblas_handle handle,
     auto shiftx = incx < 0 ? offsetx - ptrdiff_t(incx) * (n - 1) : offsetx;
     auto shifty = incy < 0 ? offsety - ptrdiff_t(incy) * (n - 1) : offsety;
 
-    static constexpr int SPMV_DIM_X = 64;
-    rocblas_int          blocks     = (n - 1) / SPMV_DIM_X + 1;
-
-    dim3 spmv_grid(blocks, batch_count);
-    dim3 spmv_threads(SPMV_DIM_X);
+    static constexpr int spmv_DIM_Y = 512;
+    rocblas_int          blocks     = (n - 1) / (spmv_DIM_Y) + 1;
+    dim3                 grid(blocks, batch_count);
+    dim3                 threads(spmv_DIM_Y);
 
     if(handle->pointer_mode == rocblas_pointer_mode_device)
     {
-        hipLaunchKernelGGL((spmv_kernel<U, V>),
-                           spmv_grid,
-                           spmv_threads,
+        hipLaunchKernelGGL(rocblas_spmv_kernel<T>,
+                           grid,
+                           threads,
                            0,
                            rocblas_stream,
                            uplo,
@@ -94,6 +108,7 @@ rocblas_status rocblas_spmv_template(rocblas_handle handle,
                            alpha,
                            stride_alpha,
                            A,
+                           offseta,
                            strideA,
                            x,
                            shiftx,
@@ -111,9 +126,9 @@ rocblas_status rocblas_spmv_template(rocblas_handle handle,
         if(!*alpha && *beta == 1)
             return rocblas_status_success;
 
-        hipLaunchKernelGGL((spmv_kernel<U, V>),
-                           spmv_grid,
-                           spmv_threads,
+        hipLaunchKernelGGL(rocblas_spmv_kernel<T>,
+                           grid,
+                           threads,
                            0,
                            rocblas_stream,
                            uplo,
@@ -121,6 +136,7 @@ rocblas_status rocblas_spmv_template(rocblas_handle handle,
                            *alpha,
                            stride_alpha,
                            A,
+                           offseta,
                            strideA,
                            x,
                            shiftx,
@@ -136,5 +152,3 @@ rocblas_status rocblas_spmv_template(rocblas_handle handle,
 
     return rocblas_status_success;
 }
-
-#endif

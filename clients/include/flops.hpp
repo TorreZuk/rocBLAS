@@ -168,6 +168,13 @@ constexpr double symv_gflop_count(rocblas_int n)
     return (2.0 * n * n + 2.0 * n) / 1e9;
 }
 
+/* \brief floating point counts of SPMV */
+template <typename T>
+constexpr double spmv_gflop_count(rocblas_int n)
+{
+    return (2.0 * n * n + 2.0 * n) / 1e9;
+}
+
 /* \brief floating point counts of GER */
 template <typename T>
 constexpr double ger_gflop_count(rocblas_int m, rocblas_int n)
