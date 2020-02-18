@@ -36,13 +36,13 @@ static __device__ void her2k_scale_device(bool upper, rocblas_int n, T beta, U* 
 /**
   *  Loads pointers and launches the actual calculation kernel.
   */
-template <typename U, typename V>
+template <typename U, typename V, typename W>
 __global__ void her2k_scale_kernel(bool           upper,
                                    rocblas_int    n,
                                    rocblas_int    k,
                                    U              alpha_host_device,
-                                   U              beta_host_device,
-                                   V              CP_array,
+                                   V              beta_host_device,
+                                   W              CP_array,
                                    ptrdiff_t      shift_c,
                                    rocblas_int    ldc,
                                    rocblas_stride stride_c)
@@ -58,7 +58,7 @@ __global__ void her2k_scale_kernel(bool           upper,
     her2k_scale_device(upper, n, beta, C, ldc);
 }
 
-template <typename TScal, typename TConstPtr, typename TPtr>
+template <typename TScal, typename TConstPtr, typename UScal, typename TPtr>
 rocblas_status rocblas_her2k_arg_check(rocblas_handle    handle,
                                        rocblas_fill      uplo,
                                        rocblas_operation trans,
@@ -73,7 +73,7 @@ rocblas_status rocblas_her2k_arg_check(rocblas_handle    handle,
                                        rocblas_int       offsetB,
                                        rocblas_int       ldb,
                                        rocblas_stride    strideB,
-                                       TScal             beta,
+                                       UScal             beta,
                                        TPtr              CP,
                                        rocblas_int       offsetC,
                                        rocblas_int       ldc,
@@ -102,7 +102,7 @@ rocblas_status rocblas_her2k_arg_check(rocblas_handle    handle,
   *  TConstPtr is either: const T* OR const T* const*
   *  TPtr      is either:       T* OR       T* const*
   */
-template <typename TScal, typename TConstPtr, typename TPtr>
+template <typename TScal, typename TConstPtr, typename UScal, typename TPtr>
 rocblas_status rocblas_her2k_template(rocblas_handle    handle,
                                       rocblas_fill      uplo,
                                       rocblas_operation trans,
@@ -117,7 +117,7 @@ rocblas_status rocblas_her2k_template(rocblas_handle    handle,
                                       rocblas_int       offsetB,
                                       rocblas_int       ldb,
                                       rocblas_stride    strideB,
-                                      TScal             beta,
+                                      UScal             beta,
                                       TPtr              CP,
                                       rocblas_int       offsetC,
                                       rocblas_int       ldc,
@@ -163,7 +163,7 @@ rocblas_status rocblas_her2k_template(rocblas_handle    handle,
 
         if(trans == rocblas_operation_none)
         {
-            hipLaunchKernelGGL((syrk_her2k_kernel<hermetian, false, SYRK_DIM_XY>),
+            hipLaunchKernelGGL((syr2k_her2k_kernel<hermetian, false, SYRK_DIM_XY>),
                                syrk_grid,
                                syrk_threads,
                                0,
@@ -184,7 +184,7 @@ rocblas_status rocblas_her2k_template(rocblas_handle    handle,
         }
         else
         {
-            hipLaunchKernelGGL((syrk_her2k_kernel<hermetian, true, SYRK_DIM_XY>),
+            hipLaunchKernelGGL((syr2k_her2k_kernel<hermetian, true, SYRK_DIM_XY>),
                                syrk_grid,
                                syrk_threads,
                                0,
@@ -227,7 +227,7 @@ rocblas_status rocblas_her2k_template(rocblas_handle    handle,
 
         if(trans == rocblas_operation_none)
         {
-            hipLaunchKernelGGL((syrk_her2k_kernel<hermetian, false, SYRK_DIM_XY>),
+            hipLaunchKernelGGL((syr2k_her2k_kernel<hermetian, false, SYRK_DIM_XY>),
                                syrk_grid,
                                syrk_threads,
                                0,
@@ -248,7 +248,7 @@ rocblas_status rocblas_her2k_template(rocblas_handle    handle,
         }
         else
         {
-            hipLaunchKernelGGL((syrk_her2k_kernel<hermetian, true, SYRK_DIM_XY>),
+            hipLaunchKernelGGL((syr2k_her2k_kernel<hermetian, true, SYRK_DIM_XY>),
                                syrk_grid,
                                syrk_threads,
                                0,

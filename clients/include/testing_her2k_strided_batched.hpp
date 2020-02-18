@@ -20,20 +20,20 @@ template <typename T>
 void testing_her2k_strided_batched_bad_arg(const Arguments& arg)
 {
     rocblas_local_handle    handle;
-    const rocblas_fill      uplo  = rocblas_fill_upper;
-    const rocblas_operation trans = rocblas_operation_none;
-    const rocblas_int       N     = 100;
-    const rocblas_int       K     = 100;
-    const rocblas_int       lda   = 100;
-    const rocblas_int       ldb   = 100;
-    const rocblas_int       ldc   = 100;
-    const T                 alpha = 1.0;
-    using U                       = real_t<T>;
-    const U        beta           = 1.0;
-    rocblas_stride strideA        = 1;
-    rocblas_stride strideB        = 1;
-    rocblas_stride strideC        = 1;
-    rocblas_int    batch_count    = 2;
+    const rocblas_fill      uplo   = rocblas_fill_upper;
+    const rocblas_operation transA = rocblas_operation_none;
+    const rocblas_int       N      = 100;
+    const rocblas_int       K      = 100;
+    const rocblas_int       lda    = 100;
+    const rocblas_int       ldb    = 100;
+    const rocblas_int       ldc    = 100;
+    const T                 alpha  = 1.0;
+    using U                        = real_t<T>;
+    const U        beta            = 1.0;
+    rocblas_stride strideA         = 1;
+    rocblas_stride strideB         = 1;
+    rocblas_stride strideC         = 1;
+    rocblas_int    batch_count     = 2;
 
     const size_t safe_size = 100;
 
@@ -47,7 +47,7 @@ void testing_her2k_strided_batched_bad_arg(const Arguments& arg)
 
     EXPECT_ROCBLAS_STATUS((rocblas_her2k_strided_batched<T>)(nullptr,
                                                              uplo,
-                                                             trans,
+                                                             transA,
                                                              N,
                                                              K,
                                                              &alpha,
@@ -66,7 +66,7 @@ void testing_her2k_strided_batched_bad_arg(const Arguments& arg)
 
     EXPECT_ROCBLAS_STATUS((rocblas_her2k_strided_batched<T>)(handle,
                                                              rocblas_fill_full,
-                                                             trans,
+                                                             transA,
                                                              N,
                                                              K,
                                                              &alpha,
@@ -106,7 +106,7 @@ void testing_her2k_strided_batched_bad_arg(const Arguments& arg)
 
     EXPECT_ROCBLAS_STATUS((rocblas_her2k_strided_batched<T>)(handle,
                                                              uplo,
-                                                             trans,
+                                                             transA,
                                                              N,
                                                              K,
                                                              nullptr,
@@ -125,7 +125,7 @@ void testing_her2k_strided_batched_bad_arg(const Arguments& arg)
 
     EXPECT_ROCBLAS_STATUS((rocblas_her2k_strided_batched<T>)(handle,
                                                              uplo,
-                                                             trans,
+                                                             transA,
                                                              N,
                                                              K,
                                                              &alpha,
@@ -144,7 +144,7 @@ void testing_her2k_strided_batched_bad_arg(const Arguments& arg)
 
     EXPECT_ROCBLAS_STATUS((rocblas_her2k_strided_batched<T>)(handle,
                                                              uplo,
-                                                             trans,
+                                                             transA,
                                                              N,
                                                              K,
                                                              &alpha,
@@ -163,7 +163,7 @@ void testing_her2k_strided_batched_bad_arg(const Arguments& arg)
 
     EXPECT_ROCBLAS_STATUS((rocblas_her2k_strided_batched<T>)(handle,
                                                              uplo,
-                                                             trans,
+                                                             transA,
                                                              N,
                                                              K,
                                                              &alpha,
@@ -182,7 +182,7 @@ void testing_her2k_strided_batched_bad_arg(const Arguments& arg)
 
     EXPECT_ROCBLAS_STATUS((rocblas_her2k_strided_batched<T>)(handle,
                                                              uplo,
-                                                             trans,
+                                                             transA,
                                                              N,
                                                              K,
                                                              &alpha,
@@ -202,7 +202,7 @@ void testing_her2k_strided_batched_bad_arg(const Arguments& arg)
     // quick return with invalid pointers
     EXPECT_ROCBLAS_STATUS((rocblas_her2k_strided_batched<T>)(handle,
                                                              uplo,
-                                                             trans,
+                                                             transA,
                                                              0,
                                                              K,
                                                              nullptr,
@@ -224,36 +224,37 @@ template <typename T>
 void testing_her2k_strided_batched(const Arguments& arg)
 {
     rocblas_local_handle handle;
-    rocblas_fill         uplo  = char2rocblas_fill(arg.uplo);
-    rocblas_operation    trans = char2rocblas_operation(arg.trans);
-    rocblas_int          N     = arg.N;
-    rocblas_int          K     = arg.K;
-    rocblas_int          lda   = arg.lda;
-    rocblas_int          ldb   = arg.ldb;
-    rocblas_int          ldc   = arg.ldc;
-    T                    alpha = arg.get_alpha<T>();
-    using U                    = real_t<T>;
-    U              beta        = arg.get_beta<U>();
-    rocblas_stride strideA     = arg.stride_a;
-    rocblas_stride strideC     = arg.stride_c;
-    rocblas_int    batch_count = arg.batch_count;
+    rocblas_fill         uplo   = char2rocblas_fill(arg.uplo);
+    rocblas_operation    transA = char2rocblas_operation(arg.transA);
+    rocblas_int          N      = arg.N;
+    rocblas_int          K      = arg.K;
+    rocblas_int          lda    = arg.lda;
+    rocblas_int          ldb    = arg.ldb;
+    rocblas_int          ldc    = arg.ldc;
+    T                    alpha  = arg.get_alpha<T>();
+    using U                     = real_t<T>;
+    U              beta         = arg.get_beta<U>();
+    rocblas_stride strideA      = arg.stride_a;
+    rocblas_stride strideB      = arg.stride_b;
+    rocblas_stride strideC      = arg.stride_c;
+    rocblas_int    batch_count  = arg.batch_count;
 
     double gpu_time_used, cpu_time_used;
     double rocblas_gflops, cblas_gflops;
     double rocblas_error = 0.0;
 
     // Note: K==0 is not an early exit, since C still needs to be multiplied by beta
-    bool invalidSize = N < 0 || K < 0 || ldc < N || (trans == rocblas_operation_none && lda < N)
-                       || (trans != rocblas_operation_none && lda < K)
-                       || (trans == rocblas_operation_none && ldb < N)
-                       || (trans != rocblas_operation_none && ldb < K) || batch_count < 0;
+    bool invalidSize = N < 0 || K < 0 || ldc < N || (transA == rocblas_operation_none && lda < N)
+                       || (transA != rocblas_operation_none && lda < K)
+                       || (transA == rocblas_operation_none && ldb < N)
+                       || (transA != rocblas_operation_none && ldb < K) || batch_count < 0;
 
     if(N == 0 || batch_count == 0 || invalidSize)
     {
         // ensure invalid sizes checked before pointer check
         EXPECT_ROCBLAS_STATUS((rocblas_her2k_strided_batched<T>)(handle,
                                                                  uplo,
-                                                                 trans,
+                                                                 transA,
                                                                  N,
                                                                  K,
                                                                  nullptr,
@@ -274,9 +275,9 @@ void testing_her2k_strided_batched(const Arguments& arg)
     }
 
     strideA = std::max(strideA,
-                       rocblas_stride(size_t(lda) * (trans == rocblas_operation_none ? K : N)));
+                       rocblas_stride(size_t(lda) * (transA == rocblas_operation_none ? K : N)));
     strideB = std::max(strideB,
-                       rocblas_stride(size_t(ldb) * (trans == rocblas_operation_none ? K : N)));
+                       rocblas_stride(size_t(ldb) * (transA == rocblas_operation_none ? K : N)));
     strideC = std::max(strideC, rocblas_stride(size_t(ldc) * N));
 
     size_t size_A = strideA * batch_count;
@@ -285,7 +286,7 @@ void testing_her2k_strided_batched(const Arguments& arg)
 
     // allocate memory on device
     device_vector<T> dA(size_A);
-    device_vector<T> dA(size_B);
+    device_vector<T> dB(size_B);
     device_vector<T> dC(size_C);
     device_vector<T> d_alpha(1);
     device_vector<U> d_beta(1);
@@ -334,7 +335,7 @@ void testing_her2k_strided_batched(const Arguments& arg)
 
         CHECK_ROCBLAS_ERROR((rocblas_her2k_strided_batched<T>)(handle,
                                                                uplo,
-                                                               trans,
+                                                               transA,
                                                                N,
                                                                K,
                                                                &h_alpha[0],
@@ -361,7 +362,7 @@ void testing_her2k_strided_batched(const Arguments& arg)
 
         CHECK_ROCBLAS_ERROR((rocblas_her2k_strided_batched<T>)(handle,
                                                                uplo,
-                                                               trans,
+                                                               transA,
                                                                N,
                                                                K,
                                                                d_alpha,
@@ -390,15 +391,15 @@ void testing_her2k_strided_batched(const Arguments& arg)
         for(int i = 0; i < batch_count; i++)
         {
             cblas_her2k<T>(uplo,
-                           trans,
+                           transA,
                            N,
                            K,
-                           h_alpha[0],
+                           &h_alpha[0],
                            hA + i * strideA,
                            lda,
                            hB + i * strideB,
                            ldb,
-                           h_beta[0],
+                           &h_beta[0],
                            hC_gold + i * strideC,
                            ldc);
         }
@@ -446,7 +447,7 @@ void testing_her2k_strided_batched(const Arguments& arg)
         {
             rocblas_her2k_strided_batched<T>(handle,
                                              uplo,
-                                             trans,
+                                             transA,
                                              N,
                                              K,
                                              h_alpha,
@@ -468,7 +469,7 @@ void testing_her2k_strided_batched(const Arguments& arg)
         {
             rocblas_her2k_strided_batched<T>(handle,
                                              uplo,
-                                             trans,
+                                             transA,
                                              N,
                                              K,
                                              h_alpha,
@@ -488,18 +489,19 @@ void testing_her2k_strided_batched(const Arguments& arg)
         rocblas_gflops
             = batch_count * her2k_gflop_count<T>(N, K) * number_hot_calls / gpu_time_used * 1e6;
 
-        std::cout
-            << "uplo,trans,N,K,alpha,lda,strideA,ldb,strideB,beta,ldc,strideC,rocblas-Gflops,us";
+        std::cout << "uplo,transA,N,K,alpha,lda,strideA,ldb,strideB,beta,ldc,strideC,batch_count,"
+                     "rocblas-Gflops,us";
 
         if(arg.norm_check)
             std::cout << ",CPU-Gflops,us,norm-error";
 
         std::cout << std::endl;
 
-        std::cout << arg.uplo << "," << arg.trans << "," << N << "," << K << ","
+        std::cout << arg.uplo << "," << arg.transA << "," << N << "," << K << ","
                   << arg.get_alpha<T>() << "," << lda << "," << strideA << "," << ldb << ","
                   << strideB << "," << arg.get_beta<U>() << "," << ldc << "," << strideC << ","
-                  << rocblas_gflops << "," << gpu_time_used / number_hot_calls;
+                  << batch_count << "," << rocblas_gflops << ","
+                  << gpu_time_used / number_hot_calls;
 
         if(arg.norm_check)
             std::cout << "," << cblas_gflops << "," << cpu_time_used << "," << rocblas_error;

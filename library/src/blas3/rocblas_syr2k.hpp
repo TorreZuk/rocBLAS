@@ -48,14 +48,14 @@ __global__ void syr2k_scale_kernel(bool           upper,
   * kernel
   */
 template <bool HERM, bool trans, rocblas_int TILE_NK, typename T, typename U>
-static __device__ void syr2k_herk_mult_add_device(bool        upper,
-                                                  rocblas_int n,
-                                                  rocblas_int k,
-                                                  U           alpha,
-                                                  const T* __restrict__ A,
-                                                  rocblas_int lda,
-                                                  T* __restrict__ C,
-                                                  rocblas_int ldc)
+static __device__ void syr2k_her2k_mult_add_device(bool        upper,
+                                                   rocblas_int n,
+                                                   rocblas_int k,
+                                                   U           alpha,
+                                                   const T* __restrict__ A,
+                                                   rocblas_int lda,
+                                                   T* __restrict__ C,
+                                                   rocblas_int ldc)
 {
     __shared__ T atile[TILE_NK][TILE_NK];
     __shared__ T btile[TILE_NK][TILE_NK];
@@ -140,19 +140,19 @@ template <bool        HERM,
           typename TScal,
           typename TConstPtr,
           typename TPtr>
-__global__ void syr2k_herk_kernel(bool              upper,
-                                  rocblas_operation trans,
-                                  rocblas_int       n,
-                                  rocblas_int       k,
-                                  TScal             alpha_host_device,
-                                  TConstPtr         AP_array,
-                                  ptrdiff_t         shift_a,
-                                  rocblas_int       lda,
-                                  rocblas_stride    stride_a,
-                                  TPtr              CP_array,
-                                  ptrdiff_t         shift_c,
-                                  rocblas_int       ldc,
-                                  rocblas_stride    stride_c)
+__global__ void syr2k_her2k_kernel(bool              upper,
+                                   rocblas_operation trans,
+                                   rocblas_int       n,
+                                   rocblas_int       k,
+                                   TScal             alpha_host_device,
+                                   TConstPtr         AP_array,
+                                   ptrdiff_t         shift_a,
+                                   rocblas_int       lda,
+                                   rocblas_stride    stride_a,
+                                   TPtr              CP_array,
+                                   ptrdiff_t         shift_c,
+                                   rocblas_int       ldc,
+                                   rocblas_stride    stride_c)
 {
 
     auto A     = load_ptr_batch(AP_array, hipBlockIdx_z, shift_a, stride_a);
@@ -164,7 +164,7 @@ __global__ void syr2k_herk_kernel(bool              upper,
 
     if(alpha == 0)
         return;
-    syr2k_herk_mult_add_device<HERM, TRANS, DIM_XYT>(upper, n, k, alpha, A, lda, C, ldc);
+    syr2k_her2k_mult_add_device<HERM, TRANS, DIM_XYT>(upper, n, k, alpha, A, lda, C, ldc);
 }
 
 template <typename TScal, typename TConstPtr, typename TPtr>
@@ -269,7 +269,7 @@ rocblas_status rocblas_syr2k_template(rocblas_handle    handle,
 
         if(trans == rocblas_operation_none)
         {
-            hipLaunchKernelGGL((syr2k_herk_kernel<false, false, syr2k_DIM_XY>),
+            hipLaunchKernelGGL((syr2k_her2k_kernel<false, false, syr2k_DIM_XY>),
                                syr2k_grid,
                                syr2k_threads,
                                0,
@@ -290,7 +290,7 @@ rocblas_status rocblas_syr2k_template(rocblas_handle    handle,
         }
         else
         {
-            hipLaunchKernelGGL((syr2k_herk_kernel<false, true, syr2k_DIM_XY>),
+            hipLaunchKernelGGL((syr2k_her2k_kernel<false, true, syr2k_DIM_XY>),
                                syr2k_grid,
                                syr2k_threads,
                                0,
@@ -331,7 +331,7 @@ rocblas_status rocblas_syr2k_template(rocblas_handle    handle,
 
         if(trans == rocblas_operation_none)
         {
-            hipLaunchKernelGGL((syr2k_herk_kernel<false, false, syr2k_DIM_XY>),
+            hipLaunchKernelGGL((syr2k_her2k_kernel<false, false, syr2k_DIM_XY>),
                                syr2k_grid,
                                syr2k_threads,
                                0,
@@ -352,7 +352,7 @@ rocblas_status rocblas_syr2k_template(rocblas_handle    handle,
         }
         else
         {
-            hipLaunchKernelGGL((syr2k_herk_kernel<false, true, syr2k_DIM_XY>),
+            hipLaunchKernelGGL((syr2k_her2k_kernel<false, true, syr2k_DIM_XY>),
                                syr2k_grid,
                                syr2k_threads,
                                0,
