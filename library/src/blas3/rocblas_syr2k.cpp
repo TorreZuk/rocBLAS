@@ -18,18 +18,18 @@ namespace
     template <>
     constexpr char rocblas_syr2k_name<rocblas_double_complex>[] = "rocblas_zsyr2k";
 
-    template <typename T, typename U>
+    template <typename T>
     rocblas_status rocblas_syr2k_impl(rocblas_handle    handle,
                                       rocblas_fill      uplo,
                                       rocblas_operation transA,
                                       rocblas_int       n,
                                       rocblas_int       k,
-                                      const U*          alpha,
+                                      const T*          alpha,
                                       const T*          A,
                                       rocblas_int       lda,
                                       const T*          B,
                                       rocblas_int       ldb,
-                                      const U*          beta,
+                                      const T*          beta,
                                       T*                C,
                                       rocblas_int       ldc)
     {

@@ -71,8 +71,6 @@ void testing_syr2k_batched_bad_arg(const Arguments& arg)
                                                    lda,
                                                    dB,
                                                    ldb,
-                                                   dB,
-                                                   ldb,
                                                    &beta,
                                                    dC,
                                                    ldc,

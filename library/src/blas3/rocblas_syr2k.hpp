@@ -54,6 +54,8 @@ static __device__ void syr2k_her2k_mult_add_device(bool        upper,
                                                    U           alpha,
                                                    const T* __restrict__ A,
                                                    rocblas_int lda,
+                                                   const T* __restrict__ B,
+                                                   rocblas_int ldb,
                                                    T* __restrict__ C,
                                                    rocblas_int ldc)
 {
@@ -73,6 +75,8 @@ static __device__ void syr2k_her2k_mult_add_device(bool        upper,
 
     int a_cols = !trans ? k : n;
     int a_rows = !trans ? n : k;
+    int b_cols = trans ? k : n;
+    int b_rows = trans ? n : k;
 
     int row = row_pos + threadIdx.x;
     int col = col_pos + threadIdx.y;
@@ -100,7 +104,44 @@ static __device__ void syr2k_her2k_mult_add_device(bool        upper,
         // fetch tile of matrix B
         row_loc = k_pos + threadIdx.x;
         col_loc = col_pos + threadIdx.y;
-        r       = trans ? row_loc : col_loc; // true B = A, false B = A^T
+        r       = trans ? row_loc : col_loc; // true B = B, false B = B^T
+        c       = trans ? col_loc : row_loc;
+
+        btile[threadIdx.x][threadIdx.y]
+            = (c < a_cols && r < a_rows) ? (HERM && !trans ? conj(B[c * ldb + r]) : B[c * ldb + r])
+                                         : 0;
+
+        __syncthreads();
+
+        // n x n symmetric/hermitian output, tile zero where invalid
+        if(row < n && col < n && from <= to)
+        {
+            T sum = T(0);
+            for(int ki = 0; ki < TILE_NK; ++ki)
+            {
+                sum += atile[threadIdx.x][ki] * btile[ki][threadIdx.y];
+            }
+            C[col * ldc + row] += alpha * sum;
+        }
+
+        __syncthreads();
+
+        // second matrix mult: alpha*op(B)*op(A)^T
+
+        // fetch tile of matrix B  into tileA
+        row_loc = row_pos + threadIdx.x;
+        col_loc = k_pos + threadIdx.y;
+        r       = trans ? col_loc : row_loc; // true B = B^T, false B = B
+        c       = trans ? row_loc : col_loc;
+
+        atile[threadIdx.x][threadIdx.y]
+            = (r < a_rows && c < a_cols) ? (HERM && trans ? conj(B[c * ldb + r]) : B[c * ldb + r])
+                                         : 0;
+
+        // fetch tile of matrix A into tileB
+        row_loc = k_pos + threadIdx.x;
+        col_loc = col_pos + threadIdx.y;
+        r       = trans ? row_loc : col_loc; // true A = A, false A = A^T
         c       = trans ? col_loc : row_loc;
 
         btile[threadIdx.x][threadIdx.y]
@@ -117,7 +158,7 @@ static __device__ void syr2k_her2k_mult_add_device(bool        upper,
             {
                 sum += atile[threadIdx.x][ki] * btile[ki][threadIdx.y];
             }
-            C[col * ldc + row] += alpha * sum;
+            C[col * ldc + row] += (HERM ? conj(alpha) : alpha) * sum;
         }
 
         __syncthreads();
@@ -149,6 +190,10 @@ __global__ void syr2k_her2k_kernel(bool              upper,
                                    ptrdiff_t         shift_a,
                                    rocblas_int       lda,
                                    rocblas_stride    stride_a,
+                                   TConstPtr         BP_array,
+                                   ptrdiff_t         shift_b,
+                                   rocblas_int       ldb,
+                                   rocblas_stride    stride_b,
                                    TPtr              CP_array,
                                    ptrdiff_t         shift_c,
                                    rocblas_int       ldc,
@@ -156,6 +201,7 @@ __global__ void syr2k_her2k_kernel(bool              upper,
 {
 
     auto A     = load_ptr_batch(AP_array, hipBlockIdx_z, shift_a, stride_a);
+    auto B     = load_ptr_batch(BP_array, hipBlockIdx_z, shift_b, stride_b);
     auto C     = load_ptr_batch(CP_array, hipBlockIdx_z, shift_c, stride_c);
     auto alpha = load_scalar(alpha_host_device);
 
@@ -164,7 +210,7 @@ __global__ void syr2k_her2k_kernel(bool              upper,
 
     if(alpha == 0)
         return;
-    syr2k_her2k_mult_add_device<HERM, TRANS, DIM_XYT>(upper, n, k, alpha, A, lda, C, ldc);
+    syr2k_her2k_mult_add_device<HERM, TRANS, DIM_XYT>(upper, n, k, alpha, A, lda, B, ldb, C, ldc);
 }
 
 template <typename TScal, typename TConstPtr, typename TPtr>
@@ -196,8 +242,8 @@ rocblas_status rocblas_syr2k_arg_check(rocblas_handle    handle,
 
     if(n < 0 || k < 0 || batch_count < 0 || ldc < n || (trans == rocblas_operation_none && lda < n)
        || (trans != rocblas_operation_none && lda < k)
-       || (trans == rocblas_operation_none && ldb < n)
-       || (trans != rocblas_operation_none && ldb < k))
+       || (trans == rocblas_operation_none && ldb < k)
+       || (trans != rocblas_operation_none && ldb < n))
         return rocblas_status_invalid_size;
     if(!n || !batch_count)
         return rocblas_status_success;
@@ -283,6 +329,10 @@ rocblas_status rocblas_syr2k_template(rocblas_handle    handle,
                                offsetA,
                                lda,
                                strideA,
+                               BP,
+                               offsetB,
+                               ldb,
+                               strideB,
                                CP,
                                offsetC,
                                ldc,
@@ -302,8 +352,12 @@ rocblas_status rocblas_syr2k_template(rocblas_handle    handle,
                                alpha,
                                AP,
                                offsetA,
-                               lda,
                                strideA,
+                               lda,
+                               BP,
+                               offsetB,
+                               ldb,
+                               strideB,
                                CP,
                                offsetC,
                                ldc,
@@ -345,6 +399,10 @@ rocblas_status rocblas_syr2k_template(rocblas_handle    handle,
                                offsetA,
                                lda,
                                strideA,
+                               BP,
+                               offsetB,
+                               ldb,
+                               strideB,
                                CP,
                                offsetC,
                                ldc,
@@ -366,6 +424,10 @@ rocblas_status rocblas_syr2k_template(rocblas_handle    handle,
                                offsetA,
                                lda,
                                strideA,
+                               BP,
+                               offsetB,
+                               ldb,
+                               strideB,
                                CP,
                                offsetC,
                                ldc,

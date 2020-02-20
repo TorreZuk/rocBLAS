@@ -18,20 +18,20 @@ namespace
     template <>
     constexpr char rocblas_syr2k_name<rocblas_double_complex>[] = "rocblas_zsyr2k_strided_batched";
 
-    template <typename T, typename U>
+    template <typename T>
     rocblas_status rocblas_syr2k_strided_batched_impl(rocblas_handle    handle,
                                                       rocblas_fill      uplo,
                                                       rocblas_operation transA,
                                                       rocblas_int       n,
                                                       rocblas_int       k,
-                                                      const U*          alpha,
+                                                      const T*          alpha,
                                                       const T*          A,
                                                       rocblas_int       lda,
                                                       rocblas_stride    stride_a,
                                                       const T*          B,
                                                       rocblas_int       ldb,
                                                       rocblas_stride    stride_b,
-                                                      const U*          beta,
+                                                      const T*          beta,
                                                       T*                C,
                                                       rocblas_int       ldc,
                                                       rocblas_stride    stride_c,
@@ -62,9 +62,10 @@ namespace
                               log_trace_scalar_value(alpha),
                               A,
                               lda,
+                              stride_a,
                               B,
                               ldb,
-                              stride_a,
+                              stride_b,
                               log_trace_scalar_value(beta),
                               C,
                               ldc,

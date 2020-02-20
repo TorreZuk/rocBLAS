@@ -91,8 +91,6 @@ void testing_her2k_strided_batched_bad_arg(const Arguments& arg)
                                                              &alpha,
                                                              dA,
                                                              lda,
-                                                             dB,
-                                                             ldb,
                                                              strideA,
                                                              dB,
                                                              ldb,

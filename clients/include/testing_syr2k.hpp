@@ -112,8 +112,8 @@ void testing_syr2k(const Arguments& arg)
     // Note: K==0 is not an early exit, since C still needs to be multiplied by beta
     bool invalidSize = N < 0 || K < 0 || ldc < N || (trans == rocblas_operation_none && lda < N)
                        || (trans != rocblas_operation_none && lda < K)
-                       || (trans == rocblas_operation_none && ldb < N)
-                       || (trans != rocblas_operation_none && ldb < K);
+                       || (trans == rocblas_operation_none && ldb < K)
+                       || (trans != rocblas_operation_none && ldb < N);
     if(N == 0 || invalidSize)
     {
         // ensure invalid sizes checked before pointer check
@@ -136,7 +136,7 @@ void testing_syr2k(const Arguments& arg)
     }
 
     const auto size_A = size_t(lda) * (trans == rocblas_operation_none ? K : N);
-    const auto size_B = size_t(ldb) * (trans == rocblas_operation_none ? K : N);
+    const auto size_B = size_t(ldb) * (trans == rocblas_operation_none ? N : K);
     const auto size_C = size_t(ldc) * N;
 
     // allocate memory on device
