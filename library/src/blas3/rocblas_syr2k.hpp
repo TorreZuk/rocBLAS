@@ -89,6 +89,7 @@ static __device__ void syr2k_her2k_mult_add_device(bool        upper,
         int r, c;
 
         // first matrix mult: alpha*op(A)*op(B)^T
+        // when HERM ^H instead of ^T
 
         // fetch tile of matrix A
         row_loc = row_pos + threadIdx.x;
@@ -126,7 +127,7 @@ static __device__ void syr2k_her2k_mult_add_device(bool        upper,
 
         __syncthreads();
 
-        // second matrix mult: alpha*op(B)*op(A)^T
+        // second matrix mult: alpha*op(B)*op(A)^T, if HERM conj(alpha) and ^H
 
         // fetch tile of matrix B  into tileA
         row_loc = row_pos + threadIdx.x;

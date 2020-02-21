@@ -32,12 +32,12 @@ Tests:
 - name: her2k_bad
   category: pre_checkin
   function: her2k_bad_arg
-  precision: *single_precision
+  precision: *single_double_precisions_complex
 
 - name: her2k_quick
   category: quick
   function: her2k
-  precision: *single_precision
+  precision: *single_double_precisions_complex
   uplo: [ U ]
   transA: [ N, C ]
   matrix_size: *quick_matrix_size_range
@@ -49,71 +49,91 @@ Tests:
   function: her2k
   precision: *single_double_precisions_complex
   uplo: [ U, L ]
-  transA: [N, C]
+  transA: [ N, C ]
   matrix_size: *medium_matrix_size_range
   alpha_beta: *alpha_beta_range
 
-# - name: her2k_large
-#   category: nightly
-#   function: her2k
-#   precision: *single_double_precisions_complex
-#   uplo: [ U, L ]
-#   transA: [N, C]
-#   matrix_size: *large_matrix_size_range
-#   alpha_beta: *alpha_beta_range
+- name: her2k_large
+  category: nightly
+  function: her2k
+  precision: *single_double_precisions_complex
+  uplo: [ U, L ]
+  transA: [ N, C ]
+  matrix_size: *large_matrix_size_range
+  alpha_beta: *alpha_beta_range
 
   # batched
-# - name: her2k_batched_bad
-#   category: pre_checkin
-#   function: her2k_batched_bad_arg
-#   precision: *single_precision
+- name: her2k_batched_bad
+  category: pre_checkin
+  function: her2k_batched_bad_arg
+  precision: *single_double_precisions_complex
 
-# - name: her2k_batched_medium
-#   category: pre_checkin
-#   function: her2k_batched
-#   precision: *single_double_precisions_complex
-#   uplo: [ U, L ]
-#   transA: [N, C]
-#   matrix_size: *medium_matrix_size_range
-#   alpha_beta: *alpha_beta_range
-#   batch_count: [ 1, 7 ]
+- name: her2k_batched_quick
+  category: quick
+  function: her2k_batched
+  precision: *single_double_precisions_complex
+  uplo: [ U ]
+  transA: [ N, C ]
+  matrix_size: *quick_matrix_size_range
+  alpha: [ 0, 1 ]
+  beta: [ 0, 1 ]
+  batch_count: [ 0, 1 ]
 
-# - name: her2k_batched_large
-#   category: nightly
-#   function: her2k_batched
-#   precision: *single_double_precisions_complex
-#   uplo: [ U, L ]
-#   transA: [N]
-#   matrix_size: *large_matrix_size_range
-#   alpha_beta: *alpha_beta_range
-#   batch_count: [ 2 ]
+- name: her2k_batched_medium
+  category: pre_checkin
+  function: her2k_batched
+  precision: *single_double_precisions_complex
+  uplo: [ U, L ]
+  transA: [ N, C ]
+  matrix_size: *medium_matrix_size_range
+  alpha_beta: *alpha_beta_range
+  batch_count: [ 1, 7 ]
 
-#   # strided batched
-# - name: her2k_strided_batched_bad
-#   category: pre_checkin
-#   function: her2k_strided_batched_bad_arg
-#   precision: *single_precision
+- name: her2k_batched_large
+  category: nightly
+  function: her2k_batched
+  precision: *single_double_precisions_complex
+  uplo: [ U, L ]
+  transA: [ N ]
+  matrix_size: *large_matrix_size_range
+  alpha_beta: *alpha_beta_range
+  batch_count: [ 2 ]
 
-# - name: her2k_strided_batched_medium
-#   category: pre_checkin
-#   function: her2k_strided_batched
-#   precision: *single_double_precisions_complex
-#   uplo: [ U, L ]
-#   transA: [N, C]
-#   matrix_size: *medium_matrix_size_range
-#   alpha_beta: *alpha_beta_range
-#   batch_count: [ 1, 7 ]
+  # strided batched
+- name: her2k_strided_batched_bad
+  category: pre_checkin
+  function: her2k_strided_batched_bad_arg
+  precision: *single_double_precisions_complex
 
-# - name: her2k_strided_batched_large
-#   category: nightly
-#   function: her2k_strided_batched
-#   precision: *single_double_precisions_complex
-#   uplo: [ U, L ]
-#   transA: [N]
-#   matrix_size: *large_matrix_size_range
-#   alpha_beta: *alpha_beta_range
-#   batch_count: [ 2 ]
+- name: her2k_strided_batched_quick
+  category: quick
+  function: her2k_strided_batched
+  precision: *single_double_precisions_complex
+  uplo: [ U ]
+  transA: [ N, C ]
+  matrix_size: *quick_matrix_size_range
+  alpha: [ 0, 1 ]
+  beta: [ 0, 1 ]
+  batch_count: [ 0, 1 ]
 
+- name: her2k_strided_batched_medium
+  category: pre_checkin
+  function: her2k_strided_batched
+  precision: *single_double_precisions_complex
+  uplo: [ U, L ]
+  transA: [ N, C ]
+  matrix_size: *medium_matrix_size_range
+  alpha_beta: *alpha_beta_range
+  batch_count: [ 1, 7 ]
 
+- name: her2k_strided_batched_large
+  category: nightly
+  function: her2k_strided_batched
+  precision: *single_double_precisions_complex
+  uplo: [ U, L ]
+  transA: [ N, C ]
+  matrix_size: *large_matrix_size_range
+  alpha_beta: *alpha_beta_range
+  batch_count: [ 2 ]
 
 ...

@@ -464,7 +464,8 @@ constexpr double herk_gflop_count<rocblas_double_complex>(rocblas_int n, rocblas
 template <typename T>
 constexpr double her2k_gflop_count(rocblas_int n, rocblas_int k)
 {
-    return ((2 * k - 1.0) * n * n + 2.0 * n * n) / 1e9;
+    size_t ntri = size_t(n) * (1 + n) / 2;
+    return (2 * (2 * k - 1.0) * n * n + 3.0 * ntri) / 1e9;
 }
 
 template <>
@@ -504,7 +505,7 @@ template <typename T>
 constexpr double syr2k_gflop_count(rocblas_int n, rocblas_int k)
 {
     size_t ntri = size_t(n) * (1 + n) / 2;
-    return ((2 * k - 1.0) * n * n + 2.0 * ntri) / 1e9;
+    return (2 * (2 * k - 1.0) * n * n + 3.0 * ntri) / 1e9;
 }
 
 template <>

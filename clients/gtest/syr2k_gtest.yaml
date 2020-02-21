@@ -29,75 +29,75 @@ Definitions:
     - { alpha:  0.0, alphai:  0.0, beta:  2.0, betai: 0.5 } # scale step only
 
 Tests:
-# - name: syr2k_bad
-#   category: pre_checkin
-#   function: syr2k_bad_arg
-#   precision: *single_precision
+- name: syr2k_bad
+  category: pre_checkin
+  function: syr2k_bad_arg
+  precision: *single_precision
 
-# - name: syr2k_quick
-#   category: quick
-#   function: syr2k
-#   precision: *single_precision
-#   uplo: [ U ]
-#   transA: [ N, T ]
-#   matrix_size: *quick_matrix_size_range
-#   alpha: [ 0, 1 ]
-#   beta: [ 0, 1 ]
+- name: syr2k_quick
+  category: quick
+  function: syr2k
+  precision: *single_precision
+  uplo: [ U ]
+  transA: [ N, T ]
+  matrix_size: *quick_matrix_size_range
+  alpha: [ 0, 1 ]
+  beta: [ 0, 1 ]
 
-# - name: syr2k_medium
-#   category: pre_checkin
-#   function: syr2k
-#   precision: *single_double_precisions_complex_real
-#   uplo: [ U, L ]
-#   transA: [N, T]
-#   matrix_size: *medium_matrix_size_range
-#   alpha_beta: *alpha_beta_range
+- name: syr2k_medium
+  category: pre_checkin
+  function: syr2k
+  precision: *single_double_precisions_complex_real
+  uplo: [ U, L ]
+  transA: [ N, T ]
+  matrix_size: *medium_matrix_size_range
+  alpha_beta: *alpha_beta_range
 
-# - name: syr2k_large
-#   category: nightly
-#   function: syr2k
-#   precision: *single_double_precisions_complex_real
-#   uplo: [ U, L ]
-#   transA: [N, T]
-#   matrix_size: *large_matrix_size_range
-#   alpha_beta: *alpha_beta_range
+- name: syr2k_large
+  category: nightly
+  function: syr2k
+  precision: *single_double_precisions_complex_real
+  uplo: [ U, L ]
+  transA: [ N, T ]
+  matrix_size: *large_matrix_size_range
+  alpha_beta: *alpha_beta_range
 
-  # batched
-# - name: syr2k_batched_bad
-#   category: pre_checkin
-#   function: syr2k_batched_bad_arg
-#   precision: *single_precision
+# batched
+- name: syr2k_batched_bad
+  category: pre_checkin
+  function: syr2k_batched_bad_arg
+  precision: *single_precision
 
-# - name: syr2k_batched_quick
-#   category: quick
-#   function: syr2k_batched
-#   precision: *single_precision
-#   uplo: [ U ]
-#   transA: [ N, T ]
-#   matrix_size: *quick_matrix_size_range
-#   alpha: [ 0, 1 ]
-#   beta: [ 0, 1 ]
-#   batch_count: [ 0, 1 ]
+- name: syr2k_batched_quick
+  category: quick
+  function: syr2k_batched
+  precision: *single_precision
+  uplo: [ U ]
+  transA: [ N, T ]
+  matrix_size: *quick_matrix_size_range
+  alpha: [ 0, 1 ]
+  beta: [ 0, 1 ]
+  batch_count: [ 0, 1 ]
 
-# - name: syr2k_batched_medium
-#   category: pre_checkin
-#   function: syr2k_batched
-#   precision: *single_double_precisions_complex_real
-#   uplo: [ U, L ]
-#   transA: [N, T]
-#   matrix_size: *medium_matrix_size_range
-#   alpha_beta: *alpha_beta_range
-#   batch_count: [ 1, 7 ]
+- name: syr2k_batched_medium
+  category: pre_checkin
+  function: syr2k_batched
+  precision: *single_double_precisions_complex_real
+  uplo: [ U, L ]
+  transA: [ N, T ]
+  matrix_size: *medium_matrix_size_range
+  alpha_beta: *alpha_beta_range
+  batch_count: [ 1, 7 ]
 
-# - name: syr2k_batched_large
-#   category: nightly
-#   function: syr2k_batched
-#   precision: *single_double_precisions_complex_real
-#   uplo: [ U, L ]
-#   transA: [N, T]
-#   matrix_size: *large_matrix_size_range
-#   alpha_beta: *alpha_beta_range
-#   batch_count: [ 2 ]
+- name: syr2k_batched_large
+  category: nightly
+  function: syr2k_batched
+  precision: *single_double_precisions_complex_real
+  uplo: [ U, L ]
+  transA: [ N, T ]
+  matrix_size: *large_matrix_size_range
+  alpha_beta: *alpha_beta_range
+  batch_count: [ 2 ]
 
 # strided batched
 - name: syr2k_strided_batched_bad
@@ -121,7 +121,7 @@ Tests:
   function: syr2k_strided_batched
   precision: *single_double_precisions_complex_real
   uplo: [ U, L ]
-  transA: [N, T]
+  transA: [ N, T ]
   matrix_size: *medium_matrix_size_range
   alpha_beta: *alpha_beta_range
   batch_count: [ 1, 7 ]
@@ -131,10 +131,9 @@ Tests:
   function: syr2k_strided_batched
   precision: *single_double_precisions_complex_real
   uplo: [ U, L ]
-  transA: [N, T]
+  transA: [ N, T ]
   matrix_size: *large_matrix_size_range
   alpha_beta: *alpha_beta_range
   batch_count: [ 2 ]
-
 
 ...
