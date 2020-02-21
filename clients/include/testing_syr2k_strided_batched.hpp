@@ -268,10 +268,12 @@ void testing_syr2k_strided_batched(const Arguments& arg)
         return;
     }
 
-    strideA = std::max(strideA,
-                       rocblas_stride(size_t(lda) * (transA == rocblas_operation_none ? K : N)));
-    strideB = std::max(strideB,
-                       rocblas_stride(size_t(ldb) * (transA == rocblas_operation_none ? K : N)));
+    strideA = std::max(
+        strideA,
+        rocblas_stride(size_t(lda) * (transA == rocblas_operation_none ? std::max(K, 1) : N)));
+    strideB = std::max(
+        strideB,
+        rocblas_stride(size_t(ldb) * (transA == rocblas_operation_none ? N : std::max(K, 1))));
     strideC = std::max(strideC, rocblas_stride(size_t(ldc) * N));
 
     size_t size_A = strideA * batch_count;

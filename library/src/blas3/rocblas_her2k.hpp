@@ -47,14 +47,13 @@ __global__ void her2k_scale_kernel(bool           upper,
                                    rocblas_int    ldc,
                                    rocblas_stride stride_c)
 {
-
-    auto C     = load_ptr_batch(CP_array, hipBlockIdx_z, shift_c, stride_c);
     auto alpha = load_scalar(alpha_host_device);
     auto beta  = load_scalar(beta_host_device);
 
     if(beta == 1 && (k == 0 || alpha == 0)) // if alpha not zero we need imaginary clear on diagonal
         return;
 
+    auto C = load_ptr_batch(CP_array, hipBlockIdx_z, shift_c, stride_c);
     her2k_scale_device(upper, n, beta, C, ldc);
 }
 
@@ -161,6 +160,9 @@ rocblas_status rocblas_her2k_template(rocblas_handle    handle,
                            ldc,
                            strideC);
 
+        if(k == 0)
+            return rocblas_status_success;
+
         if(trans == rocblas_operation_none)
         {
             hipLaunchKernelGGL((syr2k_her2k_kernel<hermetian, false, SYRK_DIM_XY>),
@@ -214,7 +216,7 @@ rocblas_status rocblas_her2k_template(rocblas_handle    handle,
     }
     else
     {
-        if((!*alpha || k == 0) && *beta == 1)
+        if(*beta == 1 && (*alpha == 0 || k == 0))
             return rocblas_status_success;
 
         // scale C so we can use directly for output without work buffer, zeros diag imaginary
@@ -232,6 +234,9 @@ rocblas_status rocblas_her2k_template(rocblas_handle    handle,
                            offsetC,
                            ldc,
                            strideC);
+
+        if(k == 0)
+            return rocblas_status_success;
 
         if(trans == rocblas_operation_none)
         {

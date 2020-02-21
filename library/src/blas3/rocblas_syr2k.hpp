@@ -35,12 +35,11 @@ __global__ void syr2k_scale_kernel(bool           upper,
                                    rocblas_int    ldc,
                                    rocblas_stride stride_c)
 {
-    auto C    = load_ptr_batch(CP_array, hipBlockIdx_z, shift_c, stride_c);
     auto beta = load_scalar(beta_host_device);
-
     if(beta == 1)
         return;
 
+    auto C = load_ptr_batch(CP_array, hipBlockIdx_z, shift_c, stride_c);
     syr2k_scale_device(upper, n, beta, C, ldc);
 }
 
@@ -108,7 +107,7 @@ static __device__ void syr2k_her2k_mult_add_device(bool        upper,
         c       = trans ? col_loc : row_loc;
 
         btile[threadIdx.x][threadIdx.y]
-            = (c < a_cols && r < a_rows) ? (HERM && !trans ? conj(B[c * ldb + r]) : B[c * ldb + r])
+            = (c < b_cols && r < b_rows) ? (HERM && !trans ? conj(B[c * ldb + r]) : B[c * ldb + r])
                                          : 0;
 
         __syncthreads();
@@ -135,7 +134,7 @@ static __device__ void syr2k_her2k_mult_add_device(bool        upper,
         c       = trans ? row_loc : col_loc;
 
         atile[threadIdx.x][threadIdx.y]
-            = (r < a_rows && c < a_cols) ? (HERM && trans ? conj(B[c * ldb + r]) : B[c * ldb + r])
+            = (r < b_rows && c < b_cols) ? (HERM && trans ? conj(B[c * ldb + r]) : B[c * ldb + r])
                                          : 0;
 
         // fetch tile of matrix A into tileB
@@ -199,17 +198,16 @@ __global__ void syr2k_her2k_kernel(bool              upper,
                                    rocblas_int       ldc,
                                    rocblas_stride    stride_c)
 {
-
-    auto A     = load_ptr_batch(AP_array, hipBlockIdx_z, shift_a, stride_a);
-    auto B     = load_ptr_batch(BP_array, hipBlockIdx_z, shift_b, stride_b);
-    auto C     = load_ptr_batch(CP_array, hipBlockIdx_z, shift_c, stride_c);
     auto alpha = load_scalar(alpha_host_device);
+    if(alpha == 0)
+        return;
+
+    auto A = load_ptr_batch(AP_array, hipBlockIdx_z, shift_a, stride_a);
+    auto B = load_ptr_batch(BP_array, hipBlockIdx_z, shift_b, stride_b);
+    auto C = load_ptr_batch(CP_array, hipBlockIdx_z, shift_c, stride_c);
 
     // compute A^T * A or A * A^T and accumulate on the fly into C
     // when HERM does A^H in place of A^T
-
-    if(alpha == 0)
-        return;
     syr2k_her2k_mult_add_device<HERM, TRANS, DIM_XYT>(upper, n, k, alpha, A, lda, B, ldb, C, ldc);
 }
 
@@ -245,8 +243,10 @@ rocblas_status rocblas_syr2k_arg_check(rocblas_handle    handle,
        || (trans == rocblas_operation_none && ldb < k)
        || (trans != rocblas_operation_none && ldb < n))
         return rocblas_status_invalid_size;
+
     if(!n || !batch_count)
         return rocblas_status_success;
+
     if((k > 0 && (!AP || !BP || !alpha)) || !CP || !beta)
         return rocblas_status_invalid_pointer;
 
@@ -313,6 +313,9 @@ rocblas_status rocblas_syr2k_template(rocblas_handle    handle,
                            ldc,
                            strideC);
 
+        if(k == 0)
+            return rocblas_status_success;
+
         if(trans == rocblas_operation_none)
         {
             hipLaunchKernelGGL((syr2k_her2k_kernel<false, false, syr2k_DIM_XY>),
@@ -352,8 +355,8 @@ rocblas_status rocblas_syr2k_template(rocblas_handle    handle,
                                alpha,
                                AP,
                                offsetA,
-                               strideA,
                                lda,
+                               strideA,
                                BP,
                                offsetB,
                                ldb,
@@ -382,6 +385,9 @@ rocblas_status rocblas_syr2k_template(rocblas_handle    handle,
                            offsetC,
                            ldc,
                            strideC);
+
+        if(k == 0)
+            return rocblas_status_success;
 
         if(trans == rocblas_operation_none)
         {

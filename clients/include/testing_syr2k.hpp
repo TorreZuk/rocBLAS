@@ -135,8 +135,8 @@ void testing_syr2k(const Arguments& arg)
         return;
     }
 
-    const auto size_A = size_t(lda) * (trans == rocblas_operation_none ? K : N);
-    const auto size_B = size_t(ldb) * (trans == rocblas_operation_none ? N : K);
+    const auto size_A = size_t(lda) * (trans == rocblas_operation_none ? std::max(K, 1) : N);
+    const auto size_B = size_t(ldb) * (trans == rocblas_operation_none ? N : std::max(K, 1));
     const auto size_C = size_t(ldc) * N;
 
     // allocate memory on device
