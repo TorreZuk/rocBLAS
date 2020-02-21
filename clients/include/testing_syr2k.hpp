@@ -110,10 +110,9 @@ void testing_syr2k(const Arguments& arg)
     double rocblas_error = 0.0;
 
     // Note: K==0 is not an early exit, since C still needs to be multiplied by beta
-    bool invalidSize = N < 0 || K < 0 || ldc < N || (trans == rocblas_operation_none && lda < N)
-                       || (trans != rocblas_operation_none && lda < K)
-                       || (trans == rocblas_operation_none && ldb < K)
-                       || (trans != rocblas_operation_none && ldb < N);
+    bool invalidSize = N < 0 || K < 0 || ldc < N
+                       || (trans == rocblas_operation_none && (lda < N || ldb < N))
+                       || (trans != rocblas_operation_none && (lda < K || ldb < K));
     if(N == 0 || invalidSize)
     {
         // ensure invalid sizes checked before pointer check

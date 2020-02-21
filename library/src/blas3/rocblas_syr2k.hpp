@@ -1,8 +1,8 @@
 /* ************************************************************************
  * Copyright 2020 Advanced Micro Devices, Inc.
  * ************************************************************************ */
-#ifndef __ROCBLAS_syr2k_HPP__
-#define __ROCBLAS_syr2k_HPP__
+#ifndef __ROCBLAS_SYRK2K_HPP__
+#define __ROCBLAS_SYRK2K_HPP__
 
 #include "handle.h"
 #include "rocblas.h"
@@ -72,10 +72,8 @@ static __device__ void syr2k_her2k_mult_add_device(bool        upper,
         return;
     }
 
-    int a_cols = !trans ? k : n;
-    int a_rows = !trans ? n : k;
-    int b_cols = trans ? k : n;
-    int b_rows = trans ? n : k;
+    int ab_rows = !trans ? n : k;
+    int ab_cols = !trans ? k : n;
 
     int row = row_pos + threadIdx.x;
     int col = col_pos + threadIdx.y;
@@ -90,25 +88,28 @@ static __device__ void syr2k_her2k_mult_add_device(bool        upper,
         int row_loc, col_loc, k_loc;
         int r, c;
 
+        // first matrix mult: alpha*op(A)*op(B)^T
+
         // fetch tile of matrix A
         row_loc = row_pos + threadIdx.x;
         col_loc = k_pos + threadIdx.y;
-        r       = trans ? col_loc : row_loc; // true A = A^T, false A = A
+        r       = trans ? col_loc : row_loc; // trans A = A^T, else A = A
         c       = trans ? row_loc : col_loc;
 
         atile[threadIdx.x][threadIdx.y]
-            = (r < a_rows && c < a_cols) ? (HERM && trans ? conj(A[c * lda + r]) : A[c * lda + r])
-                                         : 0;
+            = (r < ab_rows && c < ab_cols) ? (HERM && trans ? conj(A[c * lda + r]) : A[c * lda + r])
+                                           : 0;
 
         // fetch tile of matrix B
         row_loc = k_pos + threadIdx.x;
         col_loc = col_pos + threadIdx.y;
-        r       = trans ? row_loc : col_loc; // true B = B, false B = B^T
+        r       = trans ? row_loc : col_loc; // trans B = B, else B = B^T
         c       = trans ? col_loc : row_loc;
 
         btile[threadIdx.x][threadIdx.y]
-            = (c < b_cols && r < b_rows) ? (HERM && !trans ? conj(B[c * ldb + r]) : B[c * ldb + r])
-                                         : 0;
+            = (c < ab_cols && r < ab_rows)
+                  ? (HERM && !trans ? conj(B[c * ldb + r]) : B[c * ldb + r])
+                  : 0;
 
         __syncthreads();
 
@@ -130,22 +131,23 @@ static __device__ void syr2k_her2k_mult_add_device(bool        upper,
         // fetch tile of matrix B  into tileA
         row_loc = row_pos + threadIdx.x;
         col_loc = k_pos + threadIdx.y;
-        r       = trans ? col_loc : row_loc; // true B = B^T, false B = B
+        r       = trans ? col_loc : row_loc; // trans B = B^T, else B = B
         c       = trans ? row_loc : col_loc;
 
         atile[threadIdx.x][threadIdx.y]
-            = (r < b_rows && c < b_cols) ? (HERM && trans ? conj(B[c * ldb + r]) : B[c * ldb + r])
-                                         : 0;
+            = (r < ab_rows && c < ab_cols) ? (HERM && trans ? conj(B[c * ldb + r]) : B[c * ldb + r])
+                                           : 0;
 
         // fetch tile of matrix A into tileB
         row_loc = k_pos + threadIdx.x;
         col_loc = col_pos + threadIdx.y;
-        r       = trans ? row_loc : col_loc; // true A = A, false A = A^T
+        r       = trans ? row_loc : col_loc; // trans A = A, else A = A^T
         c       = trans ? col_loc : row_loc;
 
         btile[threadIdx.x][threadIdx.y]
-            = (c < a_cols && r < a_rows) ? (HERM && !trans ? conj(A[c * lda + r]) : A[c * lda + r])
-                                         : 0;
+            = (c < ab_cols && r < ab_rows)
+                  ? (HERM && !trans ? conj(A[c * lda + r]) : A[c * lda + r])
+                  : 0;
 
         __syncthreads();
 
@@ -206,8 +208,8 @@ __global__ void syr2k_her2k_kernel(bool              upper,
     auto B = load_ptr_batch(BP_array, hipBlockIdx_z, shift_b, stride_b);
     auto C = load_ptr_batch(CP_array, hipBlockIdx_z, shift_c, stride_c);
 
-    // compute A^T * A or A * A^T and accumulate on the fly into C
-    // when HERM does A^H in place of A^T
+    // compute matrix multiplies and accumulate on the fly into C
+    // when HERM does ^H in place of ^T
     syr2k_her2k_mult_add_device<HERM, TRANS, DIM_XYT>(upper, n, k, alpha, A, lda, B, ldb, C, ldc);
 }
 
@@ -235,13 +237,13 @@ rocblas_status rocblas_syr2k_arg_check(rocblas_handle    handle,
 {
     if(uplo != rocblas_fill_lower && uplo != rocblas_fill_upper)
         return rocblas_status_invalid_value;
+
     if(trans != rocblas_operation_none && trans != rocblas_operation_transpose)
         return rocblas_status_invalid_value;
 
-    if(n < 0 || k < 0 || batch_count < 0 || ldc < n || (trans == rocblas_operation_none && lda < n)
-       || (trans != rocblas_operation_none && lda < k)
-       || (trans == rocblas_operation_none && ldb < k)
-       || (trans != rocblas_operation_none && ldb < n))
+    if(n < 0 || k < 0 || batch_count < 0 || ldc < n ||
+       || (trans == rocblas_operation_none && (lda < N || ldb < N))
+       || (trans != rocblas_operation_none && (lda < K || ldb < K)))
         return rocblas_status_invalid_size;
 
     if(!n || !batch_count)
