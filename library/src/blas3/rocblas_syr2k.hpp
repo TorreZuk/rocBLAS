@@ -241,9 +241,9 @@ rocblas_status rocblas_syr2k_arg_check(rocblas_handle    handle,
     if(trans != rocblas_operation_none && trans != rocblas_operation_transpose)
         return rocblas_status_invalid_value;
 
-    if(n < 0 || k < 0 || batch_count < 0 || ldc < n ||
-       || (trans == rocblas_operation_none && (lda < N || ldb < N))
-       || (trans != rocblas_operation_none && (lda < K || ldb < K)))
+    if(n < 0 || k < 0 || batch_count < 0 || ldc < n
+       || (trans == rocblas_operation_none && (lda < n || ldb < n))
+       || (trans != rocblas_operation_none && (lda < k || ldb < k)))
         return rocblas_status_invalid_size;
 
     if(!n || !batch_count)
