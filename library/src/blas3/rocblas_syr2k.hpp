@@ -371,7 +371,7 @@ rocblas_status rocblas_syr2k_template(rocblas_handle    handle,
     }
     else
     {
-        if((!*alpha || k == 0) && *beta == 1)
+        if(*beta == 1 && (*alpha == 0 || k == 0))
             return rocblas_status_success;
 
         // first scale C so we can use directly for output without work buffer

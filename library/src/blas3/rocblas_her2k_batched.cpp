@@ -14,7 +14,7 @@ namespace
     template <>
     constexpr char rocblas_her2k_name<rocblas_double_complex>[] = "rocblas_zher2k_batched";
 
-    template <typename T, typename U>
+    template <typename T>
     rocblas_status rocblas_her2k_batched_impl(rocblas_handle    handle,
                                               rocblas_fill      uplo,
                                               rocblas_operation trans,
@@ -25,7 +25,7 @@ namespace
                                               rocblas_int       lda,
                                               const T* const    B[],
                                               rocblas_int       ldb,
-                                              const U*          beta,
+                                              const real_t<T>*  beta,
                                               T* const          C[],
                                               rocblas_int       ldc,
                                               rocblas_int       batch_count)

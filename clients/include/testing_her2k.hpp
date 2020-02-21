@@ -125,7 +125,7 @@ void testing_her2k(const Arguments& arg)
     double rocblas_error = 0.0;
 
     // Note: K==0 is not an early exit, since C still needs to be multiplied by beta
-    bool invalidSize = batch_count < 0 || N < 0 || K < 0 || ldc < N
+    bool invalidSize = N < 0 || K < 0 || ldc < N
                        || (transA == rocblas_operation_none && (lda < N || ldb < N))
                        || (transA != rocblas_operation_none && (lda < K || ldb < K));
     if(N == 0 || invalidSize)
