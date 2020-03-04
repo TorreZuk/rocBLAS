@@ -209,15 +209,7 @@ void testing_symm_hemm_batched(const Arguments& arg)
     h_beta[0]  = beta;
     rocblas_seedrand();
     rocblas_init<T>(hA);
-    if(HERM)
-    {
-        rocblas_init<T>(hB);
-    }
-    else
-    { // using syrk as reference so testing with B = A
-        for(int i = 0; i < batch_count; i++)
-            rocblas_copy_matrix(hA[i], hB[i], cols, cols, lda, ldb);
-    }
+    rocblas_init<T>(hB);
     rocblas_init<T>(hC_1);
 
     hC_2.copy_from(hC_1);
