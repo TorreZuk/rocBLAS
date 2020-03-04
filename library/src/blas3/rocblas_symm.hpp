@@ -8,16 +8,14 @@
 #include "rocblas.h"
 #include "utility.h"
 
-template <typename T, typename U>
-static __device__ void symm_scale_device(bool upper, rocblas_int m, T beta, U* C, rocblas_int ldc)
+template <typename T>
+static __device__ void
+    symm_scale_device(rocblas_int m, rocblas_int n, T beta, T* C, rocblas_int ldc)
 {
     auto tx = blockIdx.x * blockDim.x + threadIdx.x;
     auto ty = blockIdx.y * blockDim.y + threadIdx.y;
 
-    int from = upper ? tx : ty;
-    int to   = upper ? ty : tx;
-
-    if(tx < m && ty < m && from <= to)
+    if(tx < m && ty < n)
     {
         C[ty * ldc + tx] *= beta;
     }
@@ -26,11 +24,11 @@ static __device__ void symm_scale_device(bool upper, rocblas_int m, T beta, U* C
 /**
   *  Loads pointers and launches the actual calculation kernel.
   */
-template <typename U, typename V>
-__global__ void symm_scale_kernel(bool           upper,
-                                  rocblas_int    m,
-                                  U              beta_host_device,
-                                  V              CP_array,
+template <typename T, typename U>
+__global__ void symm_scale_kernel(rocblas_int    m,
+                                  rocblas_int    n,
+                                  T              beta_host_device,
+                                  U              CP_array,
                                   ptrdiff_t      shift_c,
                                   rocblas_int    ldc,
                                   rocblas_stride stride_c)
@@ -40,23 +38,23 @@ __global__ void symm_scale_kernel(bool           upper,
         return;
 
     auto C = load_ptr_batch(CP_array, hipBlockIdx_z, shift_c, stride_c);
-    symm_scale_device(upper, m, beta, C, ldc);
+    symm_scale_device(m, n, beta, C, ldc);
 }
 
 /**
   * kernel
   */
-template <bool HERM, bool trans, rocblas_int TILE_NK, typename T, typename U>
-static __device__ void symm_her2k_mult_add_device(bool        upper,
-                                                  rocblas_int m,
-                                                  rocblas_int n,
-                                                  U           alpha,
-                                                  const T* __restrict__ A,
-                                                  rocblas_int lda,
-                                                  const T* __restrict__ B,
-                                                  rocblas_int ldb,
-                                                  T* __restrict__ C,
-                                                  rocblas_int ldc)
+template <bool HERM, bool RIGHT, rocblas_int TILE_NK, typename T>
+static __device__ void symm_hemm_mult_add_device(bool        upper,
+                                                 rocblas_int m,
+                                                 rocblas_int n,
+                                                 T           alpha,
+                                                 const T* __restrict__ A,
+                                                 rocblas_int lda,
+                                                 const T* __restrict__ B,
+                                                 rocblas_int ldb,
+                                                 T* __restrict__ C,
+                                                 rocblas_int ldc)
 {
     __shared__ T atile[TILE_NK][TILE_NK];
     __shared__ T btile[TILE_NK][TILE_NK];
@@ -72,8 +70,8 @@ static __device__ void symm_her2k_mult_add_device(bool        upper,
         return;
     }
 
-    int ab_rows = !trans ? m : n;
-    int ab_cols = !trans ? n : m;
+    int ab_rows = !RIGHT ? m : n;
+    int ab_cols = !RIGHT ? n : m;
 
     int row = row_pos + threadIdx.x;
     int col = col_pos + threadIdx.y;
@@ -94,22 +92,22 @@ static __device__ void symm_her2k_mult_add_device(bool        upper,
         // fetch tile of matrix A
         row_loc = row_pos + threadIdx.x;
         col_loc = k_pos + threadIdx.y;
-        r       = trans ? col_loc : row_loc; // trans A = A^T, else A = A
-        c       = trans ? row_loc : col_loc;
+        r       = RIGHT ? col_loc : row_loc; // RIGHT A = A^T, else A = A
+        c       = RIGHT ? row_loc : col_loc;
 
         atile[threadIdx.x][threadIdx.y]
-            = (r < ab_rows && c < ab_cols) ? (HERM && trans ? conj(A[c * lda + r]) : A[c * lda + r])
+            = (r < ab_rows && c < ab_cols) ? (HERM && RIGHT ? conj(A[c * lda + r]) : A[c * lda + r])
                                            : 0;
 
         // fetch tile of matrix B
         row_loc = k_pos + threadIdx.x;
         col_loc = col_pos + threadIdx.y;
-        r       = trans ? row_loc : col_loc; // trans B = B, else B = B^T
-        c       = trans ? col_loc : row_loc;
+        r       = RIGHT ? row_loc : col_loc; // RIGHT B = B, else B = B^T
+        c       = RIGHT ? col_loc : row_loc;
 
         btile[threadIdx.x][threadIdx.y]
             = (c < ab_cols && r < ab_rows)
-                  ? (HERM && !trans ? conj(B[c * ldb + r]) : B[c * ldb + r])
+                  ? (HERM && !RIGHT ? conj(B[c * ldb + r]) : B[c * ldb + r])
                   : 0;
 
         __syncthreads();
@@ -133,23 +131,23 @@ static __device__ void symm_her2k_mult_add_device(bool        upper,
             // fetch tile of matrix B  into tileA
             row_loc = row_pos + threadIdx.x;
             col_loc = k_pos + threadIdx.y;
-            r       = trans ? col_loc : row_loc; // trans B = B^T, else B = B
-            c       = trans ? row_loc : col_loc;
+            r       = RIGHT ? col_loc : row_loc; // RIGHT B = B^T, else B = B
+            c       = RIGHT ? row_loc : col_loc;
 
             atile[threadIdx.x][threadIdx.y]
                 = (r < ab_rows && c < ab_cols)
-                      ? (HERM && trans ? conj(B[c * ldb + r]) : B[c * ldb + r])
+                      ? (HERM && RIGHT ? conj(B[c * ldb + r]) : B[c * ldb + r])
                       : 0;
 
             // fetch tile of matrix A into tileB
             row_loc = k_pos + threadIdx.x;
             col_loc = col_pos + threadIdx.y;
-            r       = trans ? row_loc : col_loc; // trans A = A, else A = A^T
-            c       = trans ? col_loc : row_loc;
+            r       = RIGHT ? row_loc : col_loc; // RIGHT A = A, else A = A^T
+            c       = RIGHT ? col_loc : row_loc;
 
             btile[threadIdx.x][threadIdx.y]
                 = (c < ab_cols && r < ab_rows)
-                      ? (HERM && !trans ? conj(A[c * lda + r]) : A[c * lda + r])
+                      ? (HERM && !RIGHT ? conj(A[c * lda + r]) : A[c * lda + r])
                       : 0;
 
             __syncthreads();
@@ -181,29 +179,27 @@ static __device__ void symm_her2k_mult_add_device(bool        upper,
   *  Loads pointers and launches the actual calculation kernel.
   */
 template <bool        HERM,
-          bool        HERM,
-          bool        TRANS,
+          bool        RIGHT,
           rocblas_int DIM_XYT,
           typename TScal,
           typename TConstPtr,
           typename TPtr>
-__global__ void symm_hemm_kernel(bool              upper,
-                                 rocblas_operation trans,
-                                 rocblas_int       m,
-                                 rocblas_int       n,
-                                 TScal             alpha_host_device,
-                                 TConstPtr         AP_array,
-                                 ptrdiff_t         shift_a,
-                                 rocblas_int       lda,
-                                 rocblas_stride    stride_a,
-                                 TConstPtr         BP_array,
-                                 ptrdiff_t         shift_b,
-                                 rocblas_int       ldb,
-                                 rocblas_stride    stride_b,
-                                 TPtr              CP_array,
-                                 ptrdiff_t         shift_c,
-                                 rocblas_int       ldc,
-                                 rocblas_stride    stride_c)
+__global__ void symm_hemm_kernel(bool           upper,
+                                 rocblas_int    m,
+                                 rocblas_int    n,
+                                 TScal          alpha_host_device,
+                                 TConstPtr      AP_array,
+                                 ptrdiff_t      shift_a,
+                                 rocblas_int    lda,
+                                 rocblas_stride stride_a,
+                                 TConstPtr      BP_array,
+                                 ptrdiff_t      shift_b,
+                                 rocblas_int    ldb,
+                                 rocblas_stride stride_b,
+                                 TPtr           CP_array,
+                                 ptrdiff_t      shift_c,
+                                 rocblas_int    ldc,
+                                 rocblas_stride stride_c)
 {
     auto alpha = load_scalar(alpha_host_device);
     if(alpha == 0)
@@ -215,8 +211,7 @@ __global__ void symm_hemm_kernel(bool              upper,
 
     // compute matrix multiplies and accumulate on the fly into C
     // when HERM does ^H in place of ^T
-    symm_her2k_mult_add_device<HERM, HERM, TRANS, DIM_XYT>(
-        upper, m, n, alpha, A, lda, B, ldb, C, ldc);
+    symm_hemm_mult_add_device<HERM, RIGHT, DIM_XYT>(upper, m, n, alpha, A, lda, B, ldb, C, ldc);
 }
 
 template <typename TScal, typename TConstPtr, typename TPtr>
@@ -248,12 +243,11 @@ rocblas_status rocblas_symm_arg_check(rocblas_handle handle,
     if(uplo != rocblas_fill_lower && uplo != rocblas_fill_upper)
         return rocblas_status_invalid_value;
 
-    if(m < 0 || n < 0 || batch_count < 0 || ldc < m
-       || (trans == rocblas_operation_none && (lda < m || ldb < m))
-       || (trans != rocblas_operation_none && (lda < n || ldb < n)))
+    if(batch_count < 0 || m < 0 || n < 0 || ldc < m || ldb < m
+       || (side == rocblas_side_left && (lda < m)) || (side != rocblas_side_left && (lda < n)))
         return rocblas_status_invalid_size;
 
-    if(!m || !batch_count)
+    if(!m || !n || !batch_count)
         return rocblas_status_success;
 
     if((n > 0 && (!AP || !BP || !alpha)) || !CP || !beta)
@@ -314,26 +308,25 @@ rocblas_status rocblas_symm_template(rocblas_handle handle,
                            symm_scale_threads,
                            0,
                            handle->rocblas_stream,
-                           uplo == rocblas_fill_upper,
                            m,
+                           n,
                            beta,
                            CP,
                            offsetC,
                            ldc,
                            strideC);
 
-        if(n == 0)
+        if(m == 0 || n == 0)
             return rocblas_status_success;
 
-        if(trans == rocblas_operation_none)
+        if(side == rocblas_side_left)
         {
-            hipLaunchKernelGGL((symm_hemm_kernel<HERM, false, false, symm_DIM_XY>),
+            hipLaunchKernelGGL((symm_hemm_kernel<HERM, false, symm_DIM_XY>),
                                symm_grid,
                                symm_threads,
                                0,
                                handle->rocblas_stream,
                                uplo == rocblas_fill_upper,
-                               trans,
                                m,
                                n,
                                alpha,
@@ -352,13 +345,12 @@ rocblas_status rocblas_symm_template(rocblas_handle handle,
         }
         else
         {
-            hipLaunchKernelGGL((symm_hemm_kernel<HERM, false, true, symm_DIM_XY>),
+            hipLaunchKernelGGL((symm_hemm_kernel<HERM, true, symm_DIM_XY>),
                                symm_grid,
                                symm_threads,
                                0,
                                handle->rocblas_stream,
                                uplo == rocblas_fill_upper,
-                               trans,
                                m,
                                n,
                                alpha,
@@ -378,7 +370,7 @@ rocblas_status rocblas_symm_template(rocblas_handle handle,
     }
     else
     {
-        if(*beta == 1 && (*alpha == 0 || n == 0))
+        if(*beta == 1 && (*alpha == 0 || m == 0 || n == 0))
             return rocblas_status_success;
 
         // first scale C so we can use directly for output without work buffer
@@ -387,8 +379,8 @@ rocblas_status rocblas_symm_template(rocblas_handle handle,
                            symm_scale_threads,
                            0,
                            handle->rocblas_stream,
-                           uplo == rocblas_fill_upper,
                            m,
+                           n,
                            *beta,
                            CP,
                            offsetC,
@@ -398,15 +390,14 @@ rocblas_status rocblas_symm_template(rocblas_handle handle,
         if(n == 0)
             return rocblas_status_success;
 
-        if(trans == rocblas_operation_none)
+        if(side == rocblas_side_left)
         {
-            hipLaunchKernelGGL((symm_hemm_kernel<HERM, false, false, symm_DIM_XY>),
+            hipLaunchKernelGGL((symm_hemm_kernel<HERM, false, symm_DIM_XY>),
                                symm_grid,
                                symm_threads,
                                0,
                                handle->rocblas_stream,
                                uplo == rocblas_fill_upper,
-                               trans,
                                m,
                                n,
                                *alpha,
@@ -425,13 +416,12 @@ rocblas_status rocblas_symm_template(rocblas_handle handle,
         }
         else
         {
-            hipLaunchKernelGGL((symm_hemm_kernel<HERM, false, true, symm_DIM_XY>),
+            hipLaunchKernelGGL((symm_hemm_kernel<HERM, true, symm_DIM_XY>),
                                symm_grid,
                                symm_threads,
                                0,
                                handle->rocblas_stream,
                                uplo == rocblas_fill_upper,
-                               trans,
                                m,
                                n,
                                *alpha,

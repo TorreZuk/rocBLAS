@@ -170,7 +170,7 @@ void testing_symm_hemm(const Arguments& arg)
     }
     else
     { // using syrk as syrkx reference so testing with B = A
-        rocblas_copy_matrix((T*)hA, (T*)hB, rows, cols, lda, ldb);
+        rocblas_copy_matrix((T*)hA, (T*)hB, cols, cols, lda, ldb);
     }
     rocblas_init<T>(hC_1);
     hC_2    = hC_1;
@@ -212,20 +212,11 @@ void testing_symm_hemm(const Arguments& arg)
 
         if(HERM)
         {
-            cblas_hemm<T>(side, uplo, M, N, h_alpha[0], hA, lda, hB, ldb, h_beta[0], hC_gold, ldc);
+            cblas_hemm<T>(side, uplo, M, N, h_alpha, hA, lda, hB, ldb, h_beta, hC_gold, ldc);
         }
         else
-        { // syrkx
-            cblas_symm<T>(side,
-                          uplo,
-                          M,
-                          N,
-                          h_alpha[0],
-                          hA,
-                          lda,
-                          h_beta[0],
-                          hC_gold,
-                          ldc); // B must == A to use syrk as reference
+        {
+            cblas_symm<T>(side, uplo, M, N, h_alpha[0], hA, lda, hB, ldb, h_beta[0], hC_gold, ldc);
         }
 
         if(arg.timing)

@@ -118,7 +118,7 @@ namespace
     {
         void operator()(const Arguments& arg)
         {
-            // testing_symm_hemm second argument is Hermitian to perform hemm function
+            // testing_symm second argument is Hermitian to perform hemm function
             if(!strcmp(arg.function, "symm"))
                 testing_symm_hemm<T, false>(arg);
             else if(!strcmp(arg.function, "symm_bad_arg"))

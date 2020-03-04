@@ -25,12 +25,12 @@ namespace
                                              rocblas_int    m,
                                              rocblas_int    n,
                                              const T*       alpha,
-                                             const T*       A,
+                                             const T* const A[],
                                              rocblas_int    lda,
-                                             const T*       B,
+                                             const T* const B[],
                                              rocblas_int    ldb,
                                              const T*       beta,
-                                             T*             C,
+                                             T* const       C[],
                                              rocblas_int    ldc,
                                              rocblas_int    batch_count)
     {
@@ -133,49 +133,49 @@ namespace
         static constexpr rocblas_int    offset_C = 0, offset_A = 0, offset_B = 0;
         static constexpr rocblas_stride stride_C = 0, stride_A = 0, stride_B = 0;
 
-        rocblas_status arg_status = rocblas_symm_batched_arg_check(handle,
-                                                                   side,
-                                                                   uplo,
-                                                                   m,
-                                                                   n,
-                                                                   alpha,
-                                                                   A,
-                                                                   offset_A,
-                                                                   lda,
-                                                                   stride_A,
-                                                                   B,
-                                                                   offset_B,
-                                                                   ldb,
-                                                                   stride_B,
-                                                                   beta,
-                                                                   C,
-                                                                   offset_C,
-                                                                   ldc,
-                                                                   stride_C,
-                                                                   batch_count);
+        rocblas_status arg_status = rocblas_symm_arg_check(handle,
+                                                           side,
+                                                           uplo,
+                                                           m,
+                                                           n,
+                                                           alpha,
+                                                           A,
+                                                           offset_A,
+                                                           lda,
+                                                           stride_A,
+                                                           B,
+                                                           offset_B,
+                                                           ldb,
+                                                           stride_B,
+                                                           beta,
+                                                           C,
+                                                           offset_C,
+                                                           ldc,
+                                                           stride_C,
+                                                           batch_count);
         if(arg_status != rocblas_status_continue)
             return arg_status;
 
-        return rocblas_symm_template(handle,
-                                     side,
-                                     uplo,
-                                     m,
-                                     n,
-                                     alpha,
-                                     A,
-                                     offset_A,
-                                     lda,
-                                     stride_A,
-                                     B,
-                                     offset_B,
-                                     ldb,
-                                     stride_B,
-                                     beta,
-                                     C,
-                                     offset_C,
-                                     ldc,
-                                     stride_C,
-                                     batch_count);
+        return rocblas_symm_template<false>(handle,
+                                            side,
+                                            uplo,
+                                            m,
+                                            n,
+                                            alpha,
+                                            A,
+                                            offset_A,
+                                            lda,
+                                            stride_A,
+                                            B,
+                                            offset_B,
+                                            ldb,
+                                            stride_B,
+                                            beta,
+                                            C,
+                                            offset_C,
+                                            ldc,
+                                            stride_C,
+                                            batch_count);
     }
 
 }
@@ -192,20 +192,20 @@ extern "C" {
 #endif
 
 #define IMPL(routine_name_, T_)                                                          \
-    rocblas_status routine_name_(rocblas_handle    handle,                               \
-                                 rocblas_operation side,                                 \
-                                 rocblas_fill      uplo,                                 \
-                                 rocblas_int       m,                                    \
-                                 rocblas_int       n,                                    \
-                                 const T_*         alpha,                                \
-                                 const T_*         A,                                    \
-                                 rocblas_int       lda,                                  \
-                                 const T_*         B,                                    \
-                                 rocblas_int       ldb,                                  \
-                                 const T_*         beta,                                 \
-                                 T_*               C,                                    \
-                                 rocblas_int       ldc,                                  \
-                                 rocblas_int       batch_count)                          \
+    rocblas_status routine_name_(rocblas_handle  handle,                                 \
+                                 rocblas_side    side,                                   \
+                                 rocblas_fill    uplo,                                   \
+                                 rocblas_int     m,                                      \
+                                 rocblas_int     n,                                      \
+                                 const T_*       alpha,                                  \
+                                 const T_* const A[],                                    \
+                                 rocblas_int     lda,                                    \
+                                 const T_* const B[],                                    \
+                                 rocblas_int     ldb,                                    \
+                                 const T_*       beta,                                   \
+                                 T_* const       C[],                                    \
+                                 rocblas_int     ldc,                                    \
+                                 rocblas_int     batch_count)                            \
     try                                                                                  \
     {                                                                                    \
         return rocblas_symm_batched_impl(                                                \

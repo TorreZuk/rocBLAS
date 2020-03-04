@@ -149,26 +149,26 @@ namespace
         if(arg_status != rocblas_status_continue)
             return arg_status;
 
-        return rocblas_symm_template(handle,
-                                     side,
-                                     uplo,
-                                     m,
-                                     n,
-                                     alpha,
-                                     A,
-                                     offset_A,
-                                     lda,
-                                     stride_A,
-                                     B,
-                                     offset_B,
-                                     ldb,
-                                     stride_B,
-                                     beta,
-                                     C,
-                                     offset_C,
-                                     ldc,
-                                     stride_C,
-                                     batch_count);
+        return rocblas_symm_template<false>(handle,
+                                            side,
+                                            uplo,
+                                            m,
+                                            n,
+                                            alpha,
+                                            A,
+                                            offset_A,
+                                            lda,
+                                            stride_A,
+                                            B,
+                                            offset_B,
+                                            ldb,
+                                            stride_B,
+                                            beta,
+                                            C,
+                                            offset_C,
+                                            ldc,
+                                            stride_C,
+                                            batch_count);
     }
 
 }
@@ -185,19 +185,19 @@ extern "C" {
 #endif
 
 #define IMPL(routine_name_, T_)                                                                  \
-    rocblas_status routine_name_(rocblas_handle    handle,                                       \
-                                 rocblas_operation side,                                         \
-                                 rocblas_fill      uplo,                                         \
-                                 rocblas_int       m,                                            \
-                                 rocblas_int       n,                                            \
-                                 const T_*         alpha,                                        \
-                                 const T_*         A,                                            \
-                                 rocblas_int       lda,                                          \
-                                 const T_*         B,                                            \
-                                 rocblas_int       ldb,                                          \
-                                 const T_*         beta,                                         \
-                                 T_*               C,                                            \
-                                 rocblas_int       ldc)                                          \
+    rocblas_status routine_name_(rocblas_handle handle,                                          \
+                                 rocblas_side   side,                                            \
+                                 rocblas_fill   uplo,                                            \
+                                 rocblas_int    m,                                               \
+                                 rocblas_int    n,                                               \
+                                 const T_*      alpha,                                           \
+                                 const T_*      A,                                               \
+                                 rocblas_int    lda,                                             \
+                                 const T_*      B,                                               \
+                                 rocblas_int    ldb,                                             \
+                                 const T_*      beta,                                            \
+                                 T_*            C,                                               \
+                                 rocblas_int    ldc)                                             \
     try                                                                                          \
     {                                                                                            \
         return rocblas_symm_impl(handle, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc); \

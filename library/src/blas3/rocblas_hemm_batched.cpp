@@ -21,12 +21,12 @@ namespace
                                              rocblas_int    m,
                                              rocblas_int    n,
                                              const T*       alpha,
-                                             const T*       A,
+                                             const T* const A[],
                                              rocblas_int    lda,
-                                             const T*       B,
+                                             const T* const B[],
                                              rocblas_int    ldb,
                                              const T*       beta,
-                                             T*             C,
+                                             T* const       C[],
                                              rocblas_int    ldc,
                                              rocblas_int    batch_count)
     {
@@ -40,8 +40,8 @@ namespace
            & (rocblas_layer_mode_log_trace | rocblas_layer_mode_log_bench
               | rocblas_layer_mode_log_profile))
         {
+            auto side_letter = rocblas_side_letter(side);
             auto uplo_letter = rocblas_fill_letter(uplo);
-            auto side_letter = rocblas_transpose_letter(side);
 
             if(handle->pointer_mode == rocblas_pointer_mode_host)
             {
@@ -112,9 +112,9 @@ namespace
                             side_letter,
                             "uplo",
                             uplo_letter,
-                            "N",
-                            m,
                             "M",
+                            m,
+                            "N",
                             n,
                             "lda",
                             lda,
@@ -155,8 +155,8 @@ namespace
 
         static constexpr bool Hermetian = true;
         return rocblas_symm_template<Hermetian>(handle,
-                                                uplo,
                                                 side,
+                                                uplo,
                                                 m,
                                                 n,
                                                 alpha,
@@ -190,20 +190,20 @@ extern "C" {
 #endif
 
 #define IMPL(routine_name_, T_)                                                          \
-    rocblas_status routine_name_(rocblas_handle handle,                                  \
-                                 rocblas_side   side,                                    \
-                                 rocblas_fill   uplo,                                    \
-                                 rocblas_int    m,                                       \
-                                 rocblas_int    n,                                       \
-                                 const T_*      alpha,                                   \
-                                 const T_*      A,                                       \
-                                 rocblas_int    lda,                                     \
-                                 const T_*      B,                                       \
-                                 rocblas_int    ldb,                                     \
-                                 const T_*      beta,                                    \
-                                 T_*            C,                                       \
-                                 rocblas_int    ldc,                                     \
-                                 rocblas_int    batch_count)                             \
+    rocblas_status routine_name_(rocblas_handle  handle,                                 \
+                                 rocblas_side    side,                                   \
+                                 rocblas_fill    uplo,                                   \
+                                 rocblas_int     m,                                      \
+                                 rocblas_int     n,                                      \
+                                 const T_*       alpha,                                  \
+                                 const T_* const A[],                                    \
+                                 rocblas_int     lda,                                    \
+                                 const T_* const B[],                                    \
+                                 rocblas_int     ldb,                                    \
+                                 const T_*       beta,                                   \
+                                 T_* const       C[],                                    \
+                                 rocblas_int     ldc,                                    \
+                                 rocblas_int     batch_count)                            \
     try                                                                                  \
     {                                                                                    \
         return rocblas_hemm_batched_impl(                                                \

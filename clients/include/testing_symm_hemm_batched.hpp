@@ -19,13 +19,13 @@
 template <typename T, bool HERM>
 void testing_symm_hemm_batched_bad_arg(const Arguments& arg)
 {
-    auto rocblas_fn = HERM ? rocblas_batched_hemm<T> : rocblas_batched_symm<T>;
+    auto rocblas_fn = HERM ? rocblas_hemm_batched<T> : rocblas_symm_batched<T>;
 
     rocblas_local_handle handle;
     const rocblas_side   side        = rocblas_side_left;
     const rocblas_fill   uplo        = rocblas_fill_upper;
     const rocblas_int    M           = 100;
-    const rocblas_int    M           = 100;
+    const rocblas_int    N           = 100;
     const rocblas_int    lda         = 100;
     const rocblas_int    ldb         = 100;
     const rocblas_int    ldc         = 100;
@@ -125,7 +125,7 @@ void testing_symm_hemm_batched_bad_arg(const Arguments& arg)
 template <typename T, bool HERM>
 void testing_symm_hemm_batched(const Arguments& arg)
 {
-    auto rocblas_fn     = HERM ? rocblas_batched_hemm<T> : rocblas_batched_symm<T>;
+    auto rocblas_fn     = HERM ? rocblas_hemm_batched<T> : rocblas_symm_batched<T>;
     auto gflop_count_fn = HERM ? hemm_gflop_count<T> : symm_gflop_count<T>;
 
     rocblas_local_handle handle;
@@ -216,7 +216,7 @@ void testing_symm_hemm_batched(const Arguments& arg)
     else
     { // using syrk as reference so testing with B = A
         for(int i = 0; i < batch_count; i++)
-            rocblas_copy_matrix(hA[i], hB[i], rows, cols, lda, ldb);
+            rocblas_copy_matrix(hA[i], hB[i], cols, cols, lda, ldb);
     }
     rocblas_init<T>(hC_1);
 
@@ -286,7 +286,12 @@ void testing_symm_hemm_batched(const Arguments& arg)
         {
             if(HERM)
             {
-                cblas_hemm<T>(side,
+                cblas_hemm<T>(
+                    side, uplo, M, N, h_alpha, hA[i], lda, hB[i], ldb, h_beta, hC_gold[i], ldc);
+            }
+            else
+            {
+                cblas_symm<T>(side,
                               uplo,
                               M,
                               N,
@@ -299,16 +304,12 @@ void testing_symm_hemm_batched(const Arguments& arg)
                               hC_gold[i],
                               ldc);
             }
-            else
-            {
-                cblas_symm<T>(side, uplo, M, N, h_alpha[0], hA[i], lda, h_beta[0], hC_gold[i], ldc);
-            }
         }
 
         if(arg.timing)
         {
             cpu_time_used = get_time_us() - cpu_time_used;
-            cblas_gflops  = batch_count * syrXX_gflop_count_fn(M, N) / cpu_time_used * 1e6;
+            cblas_gflops  = batch_count * gflop_count_fn(M, N) / cpu_time_used * 1e6;
         }
 
         if(arg.unit_check)

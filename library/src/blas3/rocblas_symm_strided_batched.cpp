@@ -176,26 +176,26 @@ namespace
         if(arg_status != rocblas_status_continue)
             return arg_status;
 
-        return rocblas_symm_template(handle,
-                                     side,
-                                     uplo,
-                                     m,
-                                     n,
-                                     alpha,
-                                     A,
-                                     offset_A,
-                                     lda,
-                                     stride_a,
-                                     B,
-                                     offset_B,
-                                     ldb,
-                                     stride_b,
-                                     beta,
-                                     C,
-                                     offset_C,
-                                     ldc,
-                                     stride_c,
-                                     batch_count);
+        return rocblas_symm_template<false>(handle,
+                                            side,
+                                            uplo,
+                                            m,
+                                            n,
+                                            alpha,
+                                            A,
+                                            offset_A,
+                                            lda,
+                                            stride_a,
+                                            B,
+                                            offset_B,
+                                            ldb,
+                                            stride_b,
+                                            beta,
+                                            C,
+                                            offset_C,
+                                            ldc,
+                                            stride_c,
+                                            batch_count);
     }
 
 }
@@ -211,47 +211,47 @@ extern "C" {
 #error IMPL ALREADY DEFINED
 #endif
 
-#define IMPL(routine_name_, T_)                                 \
-    rocblas_status routine_name_(rocblas_handle    handle,      \
-                                 rocblas_operation side,        \
-                                 rocblas_fill      uplo,        \
-                                 rocblas_int       m,           \
-                                 rocblas_int       n,           \
-                                 const T_*         alpha,       \
-                                 const T_*         A,           \
-                                 rocblas_int       lda,         \
-                                 rocblas_stride    stride_a,    \
-                                 const T_*         B,           \
-                                 rocblas_int       ldb,         \
-                                 rocblas_stride    stride_b,    \
-                                 const T_*         beta,        \
-                                 T_*               C,           \
-                                 rocblas_int       ldc,         \
-                                 rocblas_stride    stride_c,    \
-                                 rocblas_int       batch_count) \
-    try                                                         \
-    {                                                           \
-        return rocblas_symm_strided_batched_impl(handle,        \
-                                                 side,          \
-                                                 uplo,          \
-                                                 m,             \
-                                                 n,             \
-                                                 alpha,         \
-                                                 A,             \
-                                                 lda,           \
-                                                 stride_a,      \
-                                                 B,             \
-                                                 ldb,           \
-                                                 stride_b,      \
-                                                 beta,          \
-                                                 C,             \
-                                                 ldc,           \
-                                                 stride_c,      \
-                                                 batch_count);  \
-    }                                                           \
-    catch(...)                                                  \
-    {                                                           \
-        return exception_to_rocblas_status();                   \
+#define IMPL(routine_name_, T_)                                \
+    rocblas_status routine_name_(rocblas_handle handle,        \
+                                 rocblas_side   side,          \
+                                 rocblas_fill   uplo,          \
+                                 rocblas_int    m,             \
+                                 rocblas_int    n,             \
+                                 const T_*      alpha,         \
+                                 const T_*      A,             \
+                                 rocblas_int    lda,           \
+                                 rocblas_stride stride_a,      \
+                                 const T_*      B,             \
+                                 rocblas_int    ldb,           \
+                                 rocblas_stride stride_b,      \
+                                 const T_*      beta,          \
+                                 T_*            C,             \
+                                 rocblas_int    ldc,           \
+                                 rocblas_stride stride_c,      \
+                                 rocblas_int    batch_count)   \
+    try                                                        \
+    {                                                          \
+        return rocblas_symm_strided_batched_impl(handle,       \
+                                                 side,         \
+                                                 uplo,         \
+                                                 m,            \
+                                                 n,            \
+                                                 alpha,        \
+                                                 A,            \
+                                                 lda,          \
+                                                 stride_a,     \
+                                                 B,            \
+                                                 ldb,          \
+                                                 stride_b,     \
+                                                 beta,         \
+                                                 C,            \
+                                                 ldc,          \
+                                                 stride_c,     \
+                                                 batch_count); \
+    }                                                          \
+    catch(...)                                                 \
+    {                                                          \
+        return exception_to_rocblas_status();                  \
     }
 
 IMPL(rocblas_ssymm_strided_batched, float);

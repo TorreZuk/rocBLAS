@@ -43,8 +43,8 @@ namespace
            & (rocblas_layer_mode_log_trace | rocblas_layer_mode_log_bench
               | rocblas_layer_mode_log_profile))
         {
-            auto uplo_letter   = rocblas_fill_letter(uplo);
-            auto transA_letter = rocblas_transpose_letter(trans);
+            auto side_letter = rocblas_side_letter(side);
+            auto uplo_letter = rocblas_fill_letter(uplo);
 
             if(handle->pointer_mode == rocblas_pointer_mode_host)
             {
@@ -127,9 +127,9 @@ namespace
                             side_letter,
                             "uplo",
                             uplo_letter,
-                            "N",
+                            "M",
                             m,
-                            "K",
+                            "N",
                             n,
                             "lda",
                             lda,

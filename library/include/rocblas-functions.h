@@ -9174,7 +9174,7 @@ ROCBLAS_EXPORT rocblas_status rocblas_zhemm(rocblas_handle                handle
                                             rocblas_int                   lda,
                                             const rocblas_double_complex* B,
                                             rocblas_int                   ldb,
-                                            const rocblas_float_complex*  beta,
+                                            const rocblas_double_complex* beta,
                                             rocblas_double_complex*       C,
                                             rocblas_int                   ldc);
 
