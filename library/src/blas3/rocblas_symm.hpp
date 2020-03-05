@@ -62,21 +62,13 @@ static __device__ void symm_hemm_mult_add_device(bool        upper,
     int col_pos = blockIdx.y * TILE_NK;
     int row_pos = blockIdx.x * TILE_NK;
 
-    int tilefrom = upper ? row_pos : col_pos;
-    int tileto   = upper ? col_pos : row_pos;
-    if(tilefrom > tileto)
-    {
-        // any overlap of tile and output
-        return;
-    }
-
     int row = row_pos + threadIdx.x;
     int col = col_pos + threadIdx.y;
 
-    int from = upper ? row : col;
-    int to   = upper ? col : row;
+    int from, to;
 
-    for(int k_pos = 0; k_pos < n; k_pos += TILE_NK)
+    int k_end = !RIGHT ? m : n;
+    for(int k_pos = 0; k_pos < k_end; k_pos += TILE_NK)
     {
         // tiling over dimension K
 
@@ -92,8 +84,12 @@ static __device__ void symm_hemm_mult_add_device(bool        upper,
             // fetch tile of symm matrix A
             row_loc = row_pos + threadIdx.x;
             col_loc = k_pos + threadIdx.y;
-            r       = from > to ? col_loc : row_loc;
-            c       = from > to ? row_loc : col_loc;
+
+            from = upper ? row_loc : col_loc;
+            to   = upper ? col_loc : row_loc;
+
+            r = from > to ? col_loc : row_loc;
+            c = from > to ? row_loc : col_loc;
 
             atile[threadIdx.x][threadIdx.y]
                 = (r < m && c < m) ? (HERM && from > to ? conj(A[c * lda + r]) : A[c * lda + r])
@@ -124,8 +120,12 @@ static __device__ void symm_hemm_mult_add_device(bool        upper,
             // fetch tile of symm matrix A into tileB
             row_loc = k_pos + threadIdx.x;
             col_loc = col_pos + threadIdx.y;
-            r       = from > to ? col_loc : row_loc;
-            c       = from > to ? row_loc : col_loc;
+
+            from = upper ? row_loc : col_loc;
+            to   = upper ? col_loc : row_loc;
+
+            r = from > to ? col_loc : row_loc;
+            c = from > to ? row_loc : col_loc;
 
             btile[threadIdx.x][threadIdx.y]
                 = (r < n && c < n) ? (HERM && from > to ? conj(A[c * lda + r]) : A[c * lda + r])
