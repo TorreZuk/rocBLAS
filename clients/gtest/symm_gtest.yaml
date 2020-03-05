@@ -8,14 +8,17 @@ Definitions:
     - { M:   2,  N: -1,  lda:  2,  ldb: 2,  ldc:  1 } # bad k
     - { M:   0,  N:  3,  lda:  3,  ldb: 3,  ldc:  3 } # n==0
     - { M:   3,  N:  0,  lda:  3,  ldb: 3,  ldc:  3 } # k==0
-    - { M:   3,  N:  1,  lda:  1,  ldb: 3,  ldc:  3 } # bad lda if not transpose
-    - { M:   1,  N:  3,  lda:  1,  ldb: 3,  ldc:  3 } # bad lda if transpose
-    - { M:   3,  N:  1,  lda:  3,  ldb: 1,  ldc:  3 } # bad ldb if not transpose
-    - { M:   1,  N:  3,  lda:  3,  ldb: 1,  ldc:  3 } # bad ldb if transpose
+    - { M:   3,  N:  3,  lda:  1,  ldb: 3,  ldc:  3 } # bad lda
+    - { M:   1,  N:  3,  lda:  1,  ldb: 3,  ldc:  3 } # bad lda if right
+    - { M:   3,  N:  3,  lda:  3,  ldb: 1,  ldc:  3 } # bad ldb
     - { M:   3,  N:  3,  lda:  3,  ldb: 3,  ldc:  1 } # bad ldc
 
+  - &alpha_beta_quick_range
+    - { alpha:  0.0, alphai:  0.0, beta:  1.0, betai: 0.0 } # quick success
+    - { alpha:  0.0, alphai:  0.0, beta:  2.0, betai: 0.5 } # scale step only
+
   - &medium_matrix_size_range
-    - { M:   199, N:   33,  lda:  199,  ldb: 199,  ldc: 199 }
+    - { M:   5, N:   33,  lda:  199,  ldb: 199,  ldc: 199 }
     - { M:    88, N:  200,  lda:  200,  ldb: 200,  ldc: 88 }
     - { M:    64, N:   70,  lda:  128,  ldb: 128,  ldc: 64 }
     - { M:   199, N:  290,  lda:  290,  ldb: 290,  ldc: 200 }
@@ -27,8 +30,6 @@ Definitions:
   - &alpha_beta_range
     - { alpha:  1.5, alphai:  1.5, beta:  0.0, betai: 0.0 }
     - { alpha: -2.0, alphai:  1.0, beta: -1.0, betai: 0.5 }
-    - { alpha:  0.0, alphai:  0.0, beta:  1.0, betai: 0.0 } # quick success
-    - { alpha:  0.0, alphai:  0.0, beta:  2.0, betai: 0.5 } # scale step only
 
 Tests:
 - name: symm_bad
@@ -49,7 +50,7 @@ Tests:
 - name: symm_medium
   category: pre_checkin
   function: symm
-  precision: *single_double_precisions_complex_real
+  precision: *single_precision
   uplo: [ U, L ]
   side: [ L, R ]
   matrix_size: *medium_matrix_size_range

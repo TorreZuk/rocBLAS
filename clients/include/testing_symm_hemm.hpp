@@ -105,7 +105,7 @@ void testing_symm_hemm(const Arguments& arg)
     bool invalidSize = M < 0 || N < 0 || ldc < M || ldb < M
                        || (side == rocblas_side_left && (lda < M))
                        || (side != rocblas_side_left && (lda < N));
-    if(M == 0 || invalidSize)
+    if(M == 0 || N == 0 || invalidSize)
     {
         // ensure invalid sizes checked before pointer check
         EXPECT_ROCBLAS_STATUS(rocblas_fn(handle,

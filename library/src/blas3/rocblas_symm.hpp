@@ -91,9 +91,18 @@ static __device__ void symm_hemm_mult_add_device(bool        upper,
             r = from > to ? col_loc : row_loc;
             c = from > to ? row_loc : col_loc;
 
-            atile[threadIdx.x][threadIdx.y]
-                = (r < m && c < m) ? (HERM && from > to ? conj(A[c * lda + r]) : A[c * lda + r])
-                                   : 0;
+            if(!HERM)
+            {
+                atile[threadIdx.x][threadIdx.y] = (r < m && c < m) ? A[c * lda + r] : 0;
+            }
+            else
+            {
+                T e = (r < m && c < m)
+                          ? (from > to ? conj(A[c * lda + r])
+                                       : (from == to ? std::real(A[c * lda + r]) : A[c * lda + r]))
+                          : 0;
+                atile[threadIdx.x][threadIdx.y] = e;
+            }
 
             // fetch tile of matrix B
             row_loc = k_pos + threadIdx.x;
@@ -127,9 +136,18 @@ static __device__ void symm_hemm_mult_add_device(bool        upper,
             r = from > to ? col_loc : row_loc;
             c = from > to ? row_loc : col_loc;
 
-            btile[threadIdx.x][threadIdx.y]
-                = (r < n && c < n) ? (HERM && from > to ? conj(A[c * lda + r]) : A[c * lda + r])
-                                   : 0;
+            if(!HERM)
+            {
+                btile[threadIdx.x][threadIdx.y] = (r < n && c < n) ? A[c * lda + r] : 0;
+            }
+            else
+            {
+                T e = (r < n && c < n)
+                          ? (from > to ? conj(A[c * lda + r])
+                                       : (from == to ? std::real(A[c * lda + r]) : A[c * lda + r]))
+                          : 0;
+                btile[threadIdx.x][threadIdx.y] = e;
+            }
 
             __syncthreads();
         }

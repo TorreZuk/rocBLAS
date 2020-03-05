@@ -148,7 +148,7 @@ void testing_symm_hemm_batched(const Arguments& arg)
     bool invalidSize = batch_count < 0 || M < 0 || N < 0 || ldc < M || ldb < M
                        || (side == rocblas_side_left && (lda < M))
                        || (side != rocblas_side_left && (lda < N));
-    if(M == 0 || batch_count == 0 || invalidSize)
+    if(M == 0 || N == 0 || batch_count == 0 || invalidSize)
     {
         // ensure invalid sizes checked before pointer check
 

@@ -38,9 +38,9 @@ void testing_symm_hemm_strided_batched_bad_arg(const Arguments& arg)
 
     const size_t safe_size = 100;
     // allocate memory on device
-    device_vector<T> dA(safe_size);
-    device_vector<T> dB(safe_size);
-    device_vector<T> dC(safe_size);
+    device_strided_batch_vector<T> dA(1, 1, strideA, batch_count);
+    device_strided_batch_vector<T> dB(1, 1, strideB, batch_count);
+    device_strided_batch_vector<T> dC(1, 1, strideC, batch_count);
     CHECK_DEVICE_ALLOCATION(dA.memcheck());
     CHECK_DEVICE_ALLOCATION(dB.memcheck());
     CHECK_DEVICE_ALLOCATION(dC.memcheck());
@@ -247,7 +247,7 @@ void testing_symm_hemm_strided_batched(const Arguments& arg)
     bool invalidSize = batch_count < 0 || M < 0 || N < 0 || ldc < M || ldb < M
                        || (side == rocblas_side_left && (lda < M))
                        || (side != rocblas_side_left && (lda < N));
-    if(M == 0 || batch_count == 0 || invalidSize)
+    if(M == 0 || N == 0 || batch_count == 0 || invalidSize)
     {
         // ensure invalid sizes checked before pointer check
         EXPECT_ROCBLAS_STATUS(rocblas_fn(handle,
@@ -277,16 +277,16 @@ void testing_symm_hemm_strided_batched(const Arguments& arg)
     strideB     = std::max(strideB, rocblas_stride(size_t(ldb) * N));
     strideC     = std::max(strideC, rocblas_stride(size_t(ldc) * N));
 
-    size_t size_A = strideA * batch_count;
-    size_t size_B = strideB * batch_count;
-    size_t size_C = strideC * batch_count;
+    size_t sizeA = strideA;
+    size_t sizeB = strideB;
+    size_t sizeC = strideC;
 
     // allocate memory on device
-    device_vector<T> dA(size_A);
-    device_vector<T> dB(size_B);
-    device_vector<T> dC(size_C);
-    device_vector<T> d_alpha(1);
-    device_vector<T> d_beta(1);
+    device_strided_batch_vector<T> dA(sizeA, 1, strideA, batch_count);
+    device_strided_batch_vector<T> dB(sizeB, 1, strideB, batch_count);
+    device_strided_batch_vector<T> dC(sizeC, 1, strideC, batch_count);
+    device_vector<T>               d_alpha(1);
+    device_vector<T>               d_beta(1);
     CHECK_DEVICE_ALLOCATION(dA.memcheck());
     CHECK_DEVICE_ALLOCATION(dB.memcheck());
     CHECK_DEVICE_ALLOCATION(dC.memcheck());
@@ -294,20 +294,21 @@ void testing_symm_hemm_strided_batched(const Arguments& arg)
     CHECK_DEVICE_ALLOCATION(d_beta.memcheck());
 
     // Naming: dX is in GPU (device) memory. hK is in CPU (host) memory
-    host_vector<T> h_alpha(1);
-    host_vector<T> h_beta(1);
-    host_vector<T> hA(size_A);
-    host_vector<T> hB(size_B);
-    host_vector<T> hC_1(size_C);
-    host_vector<T> hC_2(size_C);
-    host_vector<T> hC_gold(size_C);
-    CHECK_HIP_ERROR(h_alpha.memcheck());
-    CHECK_HIP_ERROR(h_beta.memcheck());
+
+    host_strided_batch_vector<T> hA(sizeA, 1, strideA, batch_count);
+    host_strided_batch_vector<T> hB(sizeB, 1, strideB, batch_count);
+    host_strided_batch_vector<T> hC_1(sizeC, 1, strideC, batch_count);
+    host_strided_batch_vector<T> hC_2(sizeC, 1, strideC, batch_count);
+    host_strided_batch_vector<T> hC_gold(sizeC, 1, strideC, batch_count);
+    host_vector<T>               h_alpha(1);
+    host_vector<T>               h_beta(1);
     CHECK_HIP_ERROR(hA.memcheck());
     CHECK_HIP_ERROR(hB.memcheck());
     CHECK_HIP_ERROR(hC_1.memcheck());
     CHECK_HIP_ERROR(hC_2.memcheck());
     CHECK_HIP_ERROR(hC_gold.memcheck());
+    CHECK_HIP_ERROR(h_alpha.memcheck());
+    CHECK_HIP_ERROR(h_beta.memcheck());
 
     // Initial Data on CPU
     h_alpha[0] = alpha;
@@ -317,8 +318,8 @@ void testing_symm_hemm_strided_batched(const Arguments& arg)
     rocblas_init<T>(hB);
     rocblas_init<T>(hC_1);
 
-    hC_2    = hC_1;
-    hC_gold = hC_1;
+    hC_2.copy_from(hC_1);
+    hC_gold.copy_from(hC_1);
 
     // copy data from CPU to device
     CHECK_HIP_ERROR(dA.transfer_from(hA));
@@ -389,18 +390,8 @@ void testing_symm_hemm_strided_batched(const Arguments& arg)
         {
             if(HERM)
             {
-                cblas_hemm<T>(side,
-                              uplo,
-                              M,
-                              N,
-                              h_alpha,
-                              hA + i * strideA,
-                              lda,
-                              hB + i * strideB,
-                              ldb,
-                              h_beta,
-                              hC_gold + i * strideC,
-                              ldc);
+                cblas_hemm<T>(
+                    side, uplo, M, N, h_alpha, hA[i], lda, hB[i], ldb, h_beta, hC_gold[i], ldc);
             }
             else
             {
@@ -409,118 +400,118 @@ void testing_symm_hemm_strided_batched(const Arguments& arg)
                               M,
                               N,
                               h_alpha[0],
-                              hA + i * strideA,
+                              hA[i],
                               lda,
-                              hB + i * strideB,
+                              hB[i],
                               ldb,
                               h_beta[0],
-                              hC_gold + i * strideC,
+                              hC_gold[i],
                               ldc);
-            }
-
-            if(arg.timing)
-            {
-                cpu_time_used = get_time_us() - cpu_time_used;
-                cblas_gflops  = batch_count * gflop_count_fn(M, N) / cpu_time_used * 1e6;
-            }
-
-            if(arg.unit_check)
-            {
-                if(std::is_same<T, rocblas_float_complex>{}
-                   || std::is_same<T, rocblas_double_complex>{})
-                {
-                    const double tol = N * sum_error_tolerance<T>;
-                    near_check_general<T>(M, N, batch_count, ldc, strideC, hC_gold, hC_1, tol);
-                    near_check_general<T>(M, N, batch_count, ldc, strideC, hC_gold, hC_2, tol);
-                }
-                else
-                {
-                    unit_check_general<T>(M, N, batch_count, ldc, strideC, hC_gold, hC_1);
-                    unit_check_general<T>(M, N, batch_count, ldc, strideC, hC_gold, hC_2);
-                }
-            }
-
-            if(arg.norm_check)
-            {
-                auto err1 = std::abs(
-                    norm_check_general<T>('F', M, N, ldc, strideC, batch_count, hC_gold, hC_1));
-                auto err2 = std::abs(
-                    norm_check_general<T>('F', M, N, ldc, strideC, batch_count, hC_gold, hC_2));
-                rocblas_error = err1 > err2 ? err1 : err2;
             }
         }
 
         if(arg.timing)
         {
-            int number_cold_calls = arg.cold_iters;
-            int number_hot_calls  = arg.iters;
-
-            CHECK_ROCBLAS_ERROR(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host));
-
-            for(int i = 0; i < number_cold_calls; i++)
-            {
-                rocblas_fn(handle,
-                           side,
-                           uplo,
-                           M,
-                           N,
-                           h_alpha,
-                           dA,
-                           lda,
-                           strideA,
-                           dB,
-                           ldb,
-                           strideB,
-                           h_beta,
-                           dC,
-                           ldc,
-                           strideC,
-                           batch_count);
-            }
-
-            gpu_time_used = get_time_us(); // in microseconds
-            for(int i = 0; i < number_hot_calls; i++)
-            {
-                rocblas_fn(handle,
-                           side,
-                           uplo,
-                           M,
-                           N,
-                           h_alpha,
-                           dA,
-                           lda,
-                           strideA,
-                           dB,
-                           ldb,
-                           strideB,
-                           h_beta,
-                           dC,
-                           ldc,
-                           strideC,
-                           batch_count);
-            }
-            gpu_time_used = get_time_us() - gpu_time_used;
-            rocblas_gflops
-                = batch_count * gflop_count_fn(M, N) * number_hot_calls / gpu_time_used * 1e6;
-
-            std::cout << "side,uplo,M,N,alpha,lda,strideA,ldb,strideB,beta,ldc,strideC,batch_count,"
-                         "rocblas-Gflops,us";
-
-            if(arg.norm_check)
-                std::cout << ",CPU-Gflops,us,norm-error";
-
-            std::cout << std::endl;
-
-            std::cout << arg.side << "," << arg.uplo << "," << M << "," << N << ","
-                      << arg.get_alpha<T>() << "," << lda << "," << strideA << "," << ldb << ","
-                      << strideB << "," << arg.get_beta<T>() << "," << ldc << "," << strideC << ","
-                      << batch_count << "," << rocblas_gflops << ","
-                      << gpu_time_used / number_hot_calls;
-
-            if(arg.norm_check)
-                std::cout << "," << cblas_gflops << "," << cpu_time_used << "," << rocblas_error;
-
-            std::cout << std::endl;
+            cpu_time_used = get_time_us() - cpu_time_used;
+            cblas_gflops  = batch_count * gflop_count_fn(M, N) / cpu_time_used * 1e6;
         }
+
+        if(arg.unit_check)
+        {
+            if(std::is_same<T, rocblas_float_complex>{}
+               || std::is_same<T, rocblas_double_complex>{})
+            {
+                const double tol = N * sum_error_tolerance<T>;
+                near_check_general<T>(M, N, batch_count, ldc, strideC, hC_gold, hC_1, tol);
+                near_check_general<T>(M, N, batch_count, ldc, strideC, hC_gold, hC_2, tol);
+            }
+            else
+            {
+                unit_check_general<T>(M, N, batch_count, ldc, strideC, hC_gold, hC_1);
+                unit_check_general<T>(M, N, batch_count, ldc, strideC, hC_gold, hC_2);
+            }
+        }
+
+        if(arg.norm_check)
+        {
+            auto err1 = std::abs(
+                norm_check_general<T>('F', M, N, ldc, strideC, batch_count, hC_gold, hC_1));
+            auto err2 = std::abs(
+                norm_check_general<T>('F', M, N, ldc, strideC, batch_count, hC_gold, hC_2));
+            rocblas_error = err1 > err2 ? err1 : err2;
+        }
+    }
+
+    if(arg.timing)
+    {
+        int number_cold_calls = arg.cold_iters;
+        int number_hot_calls  = arg.iters;
+
+        CHECK_ROCBLAS_ERROR(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host));
+
+        for(int i = 0; i < number_cold_calls; i++)
+        {
+            rocblas_fn(handle,
+                       side,
+                       uplo,
+                       M,
+                       N,
+                       h_alpha,
+                       dA,
+                       lda,
+                       strideA,
+                       dB,
+                       ldb,
+                       strideB,
+                       h_beta,
+                       dC,
+                       ldc,
+                       strideC,
+                       batch_count);
+        }
+
+        gpu_time_used = get_time_us(); // in microseconds
+        for(int i = 0; i < number_hot_calls; i++)
+        {
+            rocblas_fn(handle,
+                       side,
+                       uplo,
+                       M,
+                       N,
+                       h_alpha,
+                       dA,
+                       lda,
+                       strideA,
+                       dB,
+                       ldb,
+                       strideB,
+                       h_beta,
+                       dC,
+                       ldc,
+                       strideC,
+                       batch_count);
+        }
+        gpu_time_used = get_time_us() - gpu_time_used;
+        rocblas_gflops
+            = batch_count * gflop_count_fn(M, N) * number_hot_calls / gpu_time_used * 1e6;
+
+        std::cout << "side,uplo,M,N,alpha,lda,strideA,ldb,strideB,beta,ldc,strideC,batch_count,"
+                     "rocblas-Gflops,us";
+
+        if(arg.norm_check)
+            std::cout << ",CPU-Gflops,us,norm-error";
+
+        std::cout << std::endl;
+
+        std::cout << arg.side << "," << arg.uplo << "," << M << "," << N << ","
+                  << arg.get_alpha<T>() << "," << lda << "," << strideA << "," << ldb << ","
+                  << strideB << "," << arg.get_beta<T>() << "," << ldc << "," << strideC << ","
+                  << batch_count << "," << rocblas_gflops << ","
+                  << gpu_time_used / number_hot_calls;
+
+        if(arg.norm_check)
+            std::cout << "," << cblas_gflops << "," << cpu_time_used << "," << rocblas_error;
+
+        std::cout << std::endl;
     }
 }
