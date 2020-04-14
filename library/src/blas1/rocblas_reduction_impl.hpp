@@ -133,24 +133,16 @@ void reduction_log_trace(rocblas_handle   handle,
     log_trace(handle, name, n, x, incx, batch_count);
 }
 
-// allocate workspace inside this API
-template <rocblas_int NB,
-          bool        ISBATCHED,
-          typename FETCH,
-          typename REDUCE,
-          typename FINALIZE,
-          typename Tw,
-          typename U,
-          typename Tr>
-rocblas_status rocblas_reduction_impl(rocblas_handle handle,
-                                      rocblas_int    n,
-                                      U              x,
-                                      rocblas_int    incx,
-                                      rocblas_stride stridex,
-                                      rocblas_int    batch_count,
-                                      Tr*            results,
-                                      const char*    name,
-                                      const char*    name_bench)
+template <rocblas_int NB, bool ISBATCHED, typename U, typename Tr>
+inline rocblas_status rocblas_reduction_checks(rocblas_handle handle,
+                                               rocblas_int    n,
+                                               U              x,
+                                               rocblas_int    incx,
+                                               rocblas_stride stridex,
+                                               rocblas_int    batch_count,
+                                               Tr*            results,
+                                               const char*    name,
+                                               const char*    name_bench)
 {
     if(!handle)
     {
@@ -176,6 +168,35 @@ rocblas_status rocblas_reduction_impl(rocblas_handle handle,
     if(!x || !results)
     {
         return rocblas_status_invalid_pointer;
+    }
+
+    return rocblas_status_continue;
+}
+
+// allocate workspace inside this API
+template <rocblas_int NB,
+          bool        ISBATCHED,
+          typename FETCH,
+          typename REDUCE,
+          typename FINALIZE,
+          typename Tw,
+          typename U,
+          typename Tr>
+rocblas_status rocblas_reduction_impl(rocblas_handle handle,
+                                      rocblas_int    n,
+                                      U              x,
+                                      rocblas_int    incx,
+                                      rocblas_stride stridex,
+                                      rocblas_int    batch_count,
+                                      Tr*            results,
+                                      const char*    name,
+                                      const char*    name_bench)
+{
+    rocblas_status checks_status = rocblas_reduction_checks<NB, ISBATCHED>(
+        handle, n, x, incx, stridex, batch_count, results, name, name_bench);
+    if(checks_status != rocblas_status_continue)
+    {
+        return checks_status;
     }
 
     size_t dev_bytes = rocblas_reduction_kernel_workspace_size<NB, Tw>(n, batch_count);

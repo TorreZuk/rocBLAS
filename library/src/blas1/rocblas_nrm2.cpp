@@ -29,13 +29,29 @@ namespace
         static constexpr bool           isbatched     = false;
         static constexpr rocblas_stride stridex_0     = 0;
         static constexpr rocblas_int    batch_count_1 = 1;
-        return rocblas_reduction_impl<NB,
-                                      isbatched,
-                                      rocblas_fetch_nrm2<To>,
-                                      rocblas_reduce_sum,
-                                      rocblas_finalize_nrm2,
-                                      To>(
+        static constexpr rocblas_int    shiftx_0      = 0;
+
+        rocblas_status checks_status = rocblas_reduction_checks<NB, isbatched>(
             handle, n, x, incx, stridex_0, batch_count_1, results, rocblas_nrm2_name<Ti>, "nrm2");
+        if(checks_status != rocblas_status_continue)
+        {
+            return checks_status;
+        }
+
+        size_t dev_bytes = rocblas_reduction_kernel_workspace_size<NB, To>(n, batch_count_1);
+        if(handle->is_device_memory_size_query())
+        {
+            return handle->set_optimal_device_memory_size(dev_bytes);
+        }
+
+        auto mem = handle->device_malloc(dev_bytes);
+        if(!mem)
+        {
+            return rocblas_status_memory_error;
+        }
+
+        return rocblas_nrm2_template<NB, isbatched>(
+            handle, n, x, shiftx_0, incx, stridex_0, batch_count_1, results, (To*)mem);
     }
 
 } // namespace

@@ -1,7 +1,7 @@
 /* ************************************************************************
  * Copyright 2016-2020 Advanced Micro Devices, Inc.
  * ************************************************************************ */
-#include "rocblas_nrm2_strided_batched.hpp"
+#include "rocblas_nrm2.hpp"
 #include "rocblas_reduction_impl.hpp"
 
 namespace
@@ -33,21 +33,38 @@ namespace
                                                      rocblas_int    batch_count,
                                                      To*            results)
     {
-        static constexpr bool isbatched = true;
-        return rocblas_reduction_impl<NB,
-                                      isbatched,
-                                      rocblas_fetch_nrm2<To>,
-                                      rocblas_reduce_sum,
-                                      rocblas_finalize_nrm2,
-                                      To>(handle,
-                                          n,
-                                          x,
-                                          incx,
-                                          stridex,
-                                          batch_count,
-                                          results,
-                                          rocblas_nrm2_strided_batched_name<Ti>,
-                                          "nrm2_strided_batched");
+        static constexpr bool        isbatched = true;
+        static constexpr rocblas_int shiftx_0  = 0;
+
+        rocblas_status checks_status
+            = rocblas_reduction_checks<NB, isbatched>(handle,
+                                                      n,
+                                                      x,
+                                                      incx,
+                                                      stridex,
+                                                      batch_count,
+                                                      results,
+                                                      rocblas_nrm2_strided_batched_name<Ti>,
+                                                      "nrm2_strided_batched");
+        if(checks_status != rocblas_status_continue)
+        {
+            return checks_status;
+        }
+
+        size_t dev_bytes = rocblas_reduction_kernel_workspace_size<NB, To>(n, batch_count);
+        if(handle->is_device_memory_size_query())
+        {
+            return handle->set_optimal_device_memory_size(dev_bytes);
+        }
+
+        auto mem = handle->device_malloc(dev_bytes);
+        if(!mem)
+        {
+            return rocblas_status_memory_error;
+        }
+
+        return rocblas_nrm2_template<NB, isbatched>(
+            handle, n, x, shiftx_0, incx, stridex, batch_count, results, (To*)mem);
     }
 
 }

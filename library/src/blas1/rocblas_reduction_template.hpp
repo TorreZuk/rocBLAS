@@ -7,7 +7,6 @@
 #include "handle.h"
 #include "reduction_strided_batched.h"
 
-// allocate workspace inside this API
 template <rocblas_int NB,
           bool        ISBATCHED,
           typename FETCH,
